@@ -170,22 +170,35 @@ module.exports = (db) => {
     try {
       const { siparis_id, operator_id, kayip_miktar, kayip_aciklama } = req.body;
       
-      if (kayip_miktar && parseFloat(kayip_miktar) > 0) {
-        await db.query(
-          'INSERT INTO kayipurunler (SiparisDetayID, OperatorID, KayipMiktar, Aciklama, KayitTarihi) VALUES (?, ?, ?, ?, NOW())',
-          [siparis_id, operator_id, kayip_miktar, kayip_aciklama]
-        );
+      const siparisDetayId = siparis_id;
+      const uygunMiktar = 0;
+      const kayipMiktarValue = kayip_miktar ? parseFloat(kayip_miktar) : 0;
+      const personelID = operator_id || (req.session.user ? req.session.user.KullaniciID : (req.session.userId || 0));
+      
+      const sqlGiris = `
+        INSERT INTO kalitekontrolgiris 
+        (SiparisDetayID, KontrolTarihi, UygunMiktar, UygunOlmayanMiktar, KontrolPersonelID) 
+        VALUES (?, NOW(), ?, ?, ?)
+      `;
+      
+      await db.query(sqlGiris, [siparisDetayId, uygunMiktar, kayipMiktarValue, personelID]);
+      
+      if (kayipMiktarValue > 0) {
+        const sqlKayip = `
+          INSERT INTO kayipurunler 
+          (SiparisDetayID, Miktar, KayipAciklamasi, KayipKodu) 
+          VALUES (?, ?, ?, ?)
+        `;
+        
+        await db.query(sqlKayip, [siparisDetayId, kayipMiktarValue, kayip_aciklama || '', 'FIRE-GIRIS']);
       }
       
-      await db.query(
-        'INSERT INTO kalitekontrolgiris (SiparisDetayID, KontrolTarihi) VALUES (?, NOW())',
-        [siparis_id]
-      );
-      
-      res.redirect('/personel/giris-kalite');
+      console.log('✅ Giriş Kalite ve Kayıp Kaydı Başarılı. SiparisDetayID:', siparisDetayId);
+      res.redirect('/personel/giris-kalite?status=success');
     } catch (error) {
       console.error('Giriş Kalite POST Hatası:', error);
-      res.redirect('/personel/giris-kalite?error=' + encodeURIComponent('Kalite kontrolü kaydedilirken hata oluştu!'));
+      console.error('Hata Detayı:', error.message);
+      res.status(500).send('Veritabanı hatası: ' + error.message);
     }
   });
 
@@ -288,7 +301,7 @@ module.exports = (db) => {
       
       res.render('personel/uretim-planlama', { 
         username: req.session.username, 
-        siparisler,
+        orders: siparisler,
         processes: prosesler,
         baths: banyolar,
         success: 'Üretim planlaması kaydedildi!', 
@@ -310,7 +323,7 @@ module.exports = (db) => {
       const [banyolar] = await db.query('SELECT BanyoAdimID, BanyoAdi FROM standardbanyoadimlari ORDER BY BanyoAdi ASC');
       res.render('personel/uretim-planlama', { 
         username: req.session.username, 
-        siparisler,
+        orders: siparisler,
         processes: prosesler,
         baths: banyolar,
         success: null, 
@@ -324,7 +337,19 @@ module.exports = (db) => {
       const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
       
       const [siparisler] = await db.query(`
-        SELECT sd.SiparisDetayID, sd.SiparisID, sd.ParcaAdi, sd.CizimDosyaYolu, m.MusteriAdi
+        SELECT 
+          sd.SiparisDetayID, 
+          sd.SiparisID, 
+          sd.ParcaAdi, 
+          sd.ParcaTuru,
+          sd.Miktar,
+          sd.ParcaNumarasi,
+          sd.CizimRevizyonu,
+          sd.KaplamaStandardiKodu,
+          sd.CizimDosyaYolu, 
+          m.MusteriAdi,
+          s.SiparisKodu,
+          s.TerminTarihi
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
@@ -382,10 +407,31 @@ module.exports = (db) => {
     try {
       const { siparis_id, operator_id, plan_id, banyo_adi } = req.body;
       
-      await db.query(
-        'INSERT INTO hareketler (SiparisDetayID, OperatorID, PlanID, BanyoAdi, BaslangicZamani) VALUES (?, ?, ?, ?, NOW())',
-        [siparis_id, operator_id, plan_id, banyo_adi]
+      console.log('BAŞLAT - siparis_id:', siparis_id, 'plan_id:', plan_id, 'operator_id:', operator_id);
+      
+      const [[existingHareket]] = await db.query(
+        'SELECT HareketID FROM hareketler WHERE PlanID = ? AND BitisZamani IS NULL ORDER BY HareketID DESC LIMIT 1',
+        [plan_id]
       );
+      
+      if (existingHareket) {
+        console.log('Hareket zaten var, HareketID:', existingHareket.HareketID);
+        return res.json({ success: true, message: 'Hareket zaten başlatılmış' });
+      }
+      
+      const [[planInfo]] = await db.query(
+        'SELECT ProsesID, BanyoAdimID FROM uretimplanlama WHERE PlanID = ?',
+        [plan_id]
+      );
+      
+      console.log('Plan bilgisi:', planInfo);
+      
+      const [result] = await db.query(
+        'INSERT INTO hareketler (SiparisDetayID, OperatorID, PlanID, ProsesID, BanyoAdimID, Miktar, BaslangicZamani) VALUES (?, ?, ?, ?, ?, ?, NOW())',
+        [siparis_id, operator_id, plan_id, planInfo?.ProsesID || null, planInfo?.BanyoAdimID || null, 0]
+      );
+      
+      console.log('Hareket oluşturuldu, HareketID:', result.insertId);
       
       if (!req.session.operatorIslemler) {
         req.session.operatorIslemler = {};
@@ -407,24 +453,76 @@ module.exports = (db) => {
     try {
       const { siparis_id, plan_id } = req.body;
       
-      const key = `${siparis_id}_${plan_id}`;
-      const baslangic = req.session.operatorIslemler?.[key]?.baslangic;
-      const bitis = new Date();
-      const gecenSure = Math.floor((bitis - new Date(baslangic)) / 1000);
-      const gecenDakika = Math.floor(gecenSure / 60);
+      console.log('BİTİR - siparis_id:', siparis_id, 'plan_id:', plan_id);
       
-      await db.query(
-        'UPDATE hareketler SET BitisZamani = NOW(), HarcananSureDk = ? WHERE PlanID = ? AND BitisZamani IS NULL',
-        [gecenDakika, plan_id]
+      const [[hareket]] = await db.query(
+        'SELECT HareketID, BaslangicZamani FROM hareketler WHERE PlanID = ? AND BitisZamani IS NULL ORDER BY HareketID DESC LIMIT 1',
+        [plan_id]
       );
       
+      console.log('Bulunan hareket:', hareket);
+      
+      if (!hareket) {
+        const [allHareketler] = await db.query(
+          'SELECT HareketID, PlanID, BitisZamani FROM hareketler WHERE PlanID = ? ORDER BY HareketID DESC LIMIT 5',
+          [plan_id]
+        );
+        console.log('Bu PlanID için tüm hareketler:', allHareketler);
+        return res.json({ success: false, error: 'Açık hareket bulunamadı. PlanID: ' + plan_id });
+      }
+      
+      await db.query(
+        'UPDATE hareketler SET BitisZamani = NOW(), HarcananSureDk = TIMESTAMPDIFF(MINUTE, BaslangicZamani, NOW()) WHERE HareketID = ?',
+        [hareket.HareketID]
+      );
+      
+      const [[updatedHareket]] = await db.query(
+        'SELECT HarcananSureDk FROM hareketler WHERE HareketID = ?',
+        [hareket.HareketID]
+      );
+      
+      console.log('Hareket güncellendi, HarcananSureDk:', updatedHareket.HarcananSureDk);
+      
+      const key = `${siparis_id}_${plan_id}`;
       if (req.session.operatorIslemler) {
         delete req.session.operatorIslemler[key];
       }
       
-      res.json({ success: true, gecen_sure: gecenSure });
+      res.json({ success: true, harcananDakika: updatedHareket.HarcananSureDk });
     } catch (error) {
       console.error('Operatör Bitir Hatası:', error);
+      res.json({ success: false, error: error.message });
+    }
+  });
+
+  router.post('/operator/islem-bitir', authMiddleware, personelMiddleware, async (req, res) => {
+    try {
+      const { siparis_id } = req.body;
+      
+      const [planlar] = await db.query(
+        'SELECT PlanID FROM uretimplanlama WHERE SiparisDetayID = ? ORDER BY Sira ASC',
+        [siparis_id]
+      );
+      
+      for (const plan of planlar) {
+        const [[hareket]] = await db.query(
+          'SELECT HareketID FROM hareketler WHERE PlanID = ? AND BitisZamani IS NOT NULL',
+          [plan.PlanID]
+        );
+        
+        if (!hareket) {
+          return res.json({ success: false, error: 'Tüm adımlar tamamlanmamış!' });
+        }
+      }
+      
+      await db.query(
+        'UPDATE uretimplanlama SET Durum = ? WHERE SiparisDetayID = ?',
+        ['Tamamlandı', siparis_id]
+      );
+      
+      res.json({ success: true, redirect: '/personel/cikis-kalite' });
+    } catch (error) {
+      console.error('İşlem Bitir Hatası:', error);
       res.json({ success: false, error: error.message });
     }
   });
@@ -752,6 +850,7 @@ module.exports = (db) => {
       await connection.beginTransaction();
       
       const { 
+        SiparisKodu,
         musteriAdi, 
         FaturaTutari,
         TerminTarihi,
@@ -786,12 +885,23 @@ module.exports = (db) => {
         musteriID = newMusteri.insertId;
       }
       
-      const siparisKodu = 'SIP-' + Date.now();
+      if (!SiparisKodu || SiparisKodu.trim() === '') {
+        throw new Error('Sipariş kodu boş olamaz!');
+      }
+      
+      const [existingSiparis] = await connection.query(
+        'SELECT SiparisID FROM siparisler WHERE SiparisKodu = ?',
+        [SiparisKodu]
+      );
+      
+      if (existingSiparis.length > 0) {
+        throw new Error('Bu sipariş kodu zaten kullanılıyor! Lütfen farklı bir kod giriniz.');
+      }
       
       const [siparisResult] = await connection.query(
         `INSERT INTO siparisler (MusteriID, SiparisKodu, OlusturmaTarihi, TerminTarihi, FaturaTutari) 
          VALUES (?, ?, NOW(), ?, ?)`,
-        [musteriID, siparisKodu, TerminTarihi, FaturaTutari]
+        [musteriID, SiparisKodu, TerminTarihi, FaturaTutari]
       );
       
       const siparisID = siparisResult.insertId;
@@ -823,7 +933,7 @@ module.exports = (db) => {
       
       res.render('personel/siparis-olustur', { 
         username: req.session.username, 
-        success: `Sipariş başarıyla oluşturuldu! Sipariş Kodu: ${siparisKodu} | Dosya: ${cizimDosyaYolu}`, 
+        success: `Sipariş başarıyla oluşturuldu! Sipariş Kodu: ${SiparisKodu} | Dosya: ${cizimDosyaYolu}`, 
         error: null 
       });
       

@@ -110,5 +110,12 @@
       </form>
     </div>
   </div>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('status') === 'success') {
+        alert("✅ Giriş Kalite Kontrolü Başarıyla Tamamlandı! Sipariş planlamaya aktarıldı.");
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+</script>
 </body>
 </html>

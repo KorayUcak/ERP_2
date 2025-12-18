@@ -115,11 +115,9 @@
           
           <div id="kaliteyeGonderContainer" style="display: none; text-align: center; padding: 30px; background: #d4edda; border-radius: 10px;">
             <h3 style="color: #155724; margin-bottom: 15px;">✅ Tüm Adımlar Tamamlandı!</h3>
-            <form action="/personel/cikis-kalite" method="GET">
-              <button type="submit" style="background: #28a745; color: white; border: none; padding: 15px 40px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: 600;">
-                KALİTEYE GÖNDER
-              </button>
-            </form>
+            <button onclick="islemiBitir()" style="background: #28a745; color: white; border: none; padding: 15px 40px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: 600;">
+              İŞLEMİ BİTİR VE KALİTEYE GÖNDER
+            </button>
           </div>
         </div>
       </div>
@@ -133,24 +131,36 @@
     let adimTimers = {};
     const plans = <%- JSON.stringify(plans) %>;
     
+    const siparisData = <%- JSON.stringify(siparisler) %>;
+    
     document.getElementById('siparisSelect').addEventListener('change', function() {
       siparisId = this.value;
-      const fotograf = this.options[this.selectedIndex].dataset.fotograf;
       
       if (siparisId) {
         document.getElementById('siparisDetay').style.display = 'block';
         
+        const siparis = siparisData.find(s => s.SiparisDetayID == siparisId);
+        
         const fotografContainer = document.getElementById('fotografContainer');
-        if (fotograf && fotograf !== 'null' && fotograf !== 'undefined') {
-          fotografContainer.innerHTML = '<img src="/uploads/' + fotograf + '" style="max-width: 100%; max-height: 300px; border-radius: 5px;">';
+        if (siparis.CizimDosyaYolu && siparis.CizimDosyaYolu !== 'null' && siparis.CizimDosyaYolu !== 'undefined') {
+          fotografContainer.innerHTML = '<img src="/uploads/' + siparis.CizimDosyaYolu + '" style="max-width: 100%; max-height: 300px; border-radius: 5px;">';
         } else {
           fotografContainer.innerHTML = '<p style="color: #999;">Dosya yüklenmemiş</p>';
         }
         
         const siparisInfo = document.getElementById('siparisInfo');
-        const selectedOption = this.options[this.selectedIndex];
-        const text = selectedOption.text;
-        siparisInfo.innerHTML = '<div style="font-size: 16px; line-height: 1.8;"><strong>Sipariş:</strong> ' + text + '</div>';
+        let infoHTML = '<div style="font-size: 14px; line-height: 2;">';
+        infoHTML += '<div><strong>Sipariş Kodu:</strong> ' + (siparis.SiparisKodu || '-') + '</div>';
+        infoHTML += '<div><strong>Müşteri:</strong> ' + (siparis.MusteriAdi || '-') + '</div>';
+        infoHTML += '<div><strong>Parça Adı:</strong> ' + (siparis.ParcaAdi || '-') + '</div>';
+        infoHTML += '<div><strong>Parça Türü:</strong> ' + (siparis.ParcaTuru || '-') + '</div>';
+        infoHTML += '<div><strong>Miktar:</strong> ' + (siparis.Miktar || '-') + ' Adet</div>';
+        infoHTML += '<div><strong>Parça Numarası:</strong> ' + (siparis.ParcaNumarasi || '-') + '</div>';
+        infoHTML += '<div><strong>Çizim Revizyonu:</strong> ' + (siparis.CizimRevizyonu || '-') + '</div>';
+        infoHTML += '<div><strong>Kaplama Standardı:</strong> ' + (siparis.KaplamaStandardiKodu || '-') + '</div>';
+        infoHTML += '<div><strong>Termin Tarihi:</strong> ' + (siparis.TerminTarihi ? new Date(siparis.TerminTarihi).toLocaleDateString('tr-TR') : '-') + '</div>';
+        infoHTML += '</div>';
+        siparisInfo.innerHTML = infoHTML;
         
         renderAdimlar();
       } else {
@@ -171,8 +181,6 @@
       planlar.forEach((plan, index) => {
         const adimNo = index + 1;
         const banyoInfo = plan.HedefBanyoAdi ? plan.HedefBanyoAdi : 'Banyo belirtilmemiş';
-        const sureInfo = plan.SureDkMin && plan.SureDkMax ? 
-          `(${plan.SureDkMin}-${plan.SureDkMax} dk)` : '';
         
         html += `
           <div id="adim_${plan.PlanID}" style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
@@ -182,7 +190,7 @@
                   ${adimNo}. Adım: ${plan.ProsesAdi}
                 </h4>
                 <p style="color: #666; font-size: 14px;">
-                  <strong>Planlanan Banyo:</strong> ${banyoInfo} ${sureInfo}
+                  <strong>Planlanan Banyo:</strong> ${banyoInfo}
                 </p>
               </div>
               <div id="status_${plan.PlanID}" style="font-weight: bold; color: #999;">BEKLİYOR</div>
@@ -218,8 +226,11 @@
       const btn = document.getElementById('btn_' + planId);
       const timer = document.getElementById('timer_' + planId);
       const status = document.getElementById('status_' + planId);
+      const warning = document.getElementById('warning_' + planId);
       
-      if (btn.textContent === 'BAŞLAT') {
+      console.log('toggleAdim çağrıldı, planId:', planId, 'btn.textContent:', btn.textContent);
+      
+      if (btn.textContent.trim() === 'BAŞLAT') {
         fetch('/personel/operator/baslat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -250,6 +261,7 @@
       } else {
         if (adimTimers[planId]) {
           clearInterval(adimTimers[planId].interval);
+          delete adimTimers[planId];
         }
         
         fetch('/personel/operator/bitir', {
@@ -263,8 +275,11 @@
             btn.disabled = true;
             btn.style.opacity = '0.5';
             btn.style.cursor = 'not-allowed';
+            btn.textContent = 'TAMAMLANDI';
             status.textContent = 'TAMAMLANDI';
             status.style.color = '#28a745';
+            timer.style.display = 'none';
+            if (warning) warning.style.display = 'none';
             
             currentAdimIndex++;
             const planlar = plans[siparisId];
@@ -291,6 +306,7 @@
       
       const now = new Date();
       const elapsed = Math.floor((now - timer.startTime) / 1000);
+      
       const timerEl = document.getElementById('timer_' + planId);
       if (timerEl) {
         timerEl.textContent = formatTime(elapsed);
@@ -302,6 +318,33 @@
       const m = Math.floor((seconds % 3600) / 60);
       const s = seconds % 60;
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+    
+    function islemiBitir() {
+      if (!siparisId) {
+        alert('Sipariş seçilmemiş!');
+        return;
+      }
+      
+      if (confirm('Tüm adımlar tamamlandı. İşlemi bitirip çıkış kaliteye göndermek istiyor musunuz?')) {
+        fetch('/personel/operator/islem-bitir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siparis_id: siparisId })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            alert('İşlem başarıyla tamamlandı! Çıkış kalite sayfasına yönlendiriliyorsunuz.');
+            window.location.href = data.redirect;
+          } else {
+            alert('Hata: ' + data.error);
+          }
+        })
+        .catch(error => {
+          alert('Bir hata oluştu: ' + error.message);
+        });
+      }
     }
   </script>
 </body>
