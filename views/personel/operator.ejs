@@ -79,7 +79,7 @@
           <select id="siparisSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
             <option value="">-- Sipariş Seçin --</option>
             <% siparisler.forEach(siparis => { %>
-              <option value="<%= siparis.SiparisDetayID %>" data-fotograf="<%= siparis.CizimDosyaYolu %>">
+              <option value="<%= siparis.SiparisDetayID %>" data-fotograf="<%= siparis.UrunFotografi %>" data-cizim="<%= siparis.CizimDosyaYolu %>">
                 #<%= siparis.SiparisDetayID %> - <%= siparis.MusteriAdi %> - <%= siparis.ParcaAdi %>
               </option>
             <% }) %>
@@ -89,9 +89,9 @@
         <div id="siparisDetay" style="display: none;">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
             <div>
-              <h3 style="margin-bottom: 15px;">Çizim Dosyası</h3>
+              <h3 style="margin-bottom: 15px;">Ürün Fotoğrafı (Mal Kabul)</h3>
               <div id="fotografContainer" style="border: 2px solid #ddd; border-radius: 5px; padding: 10px; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
-                <p style="color: #999;">Dosya yüklenmemiş</p>
+                <p style="color: #999;">Fotoğraf yüklenmemiş</p>
               </div>
             </div>
             
@@ -142,10 +142,10 @@
         const siparis = siparisData.find(s => s.SiparisDetayID == siparisId);
         
         const fotografContainer = document.getElementById('fotografContainer');
-        if (siparis.CizimDosyaYolu && siparis.CizimDosyaYolu !== 'null' && siparis.CizimDosyaYolu !== 'undefined') {
-          fotografContainer.innerHTML = '<img src="/uploads/' + siparis.CizimDosyaYolu + '" style="max-width: 100%; max-height: 300px; border-radius: 5px;">';
+        if (siparis.UrunFotografi && siparis.UrunFotografi !== 'null' && siparis.UrunFotografi !== 'undefined') {
+          fotografContainer.innerHTML = '<img src="/uploads/' + siparis.UrunFotografi + '" style="max-width: 100%; max-height: 300px; border-radius: 5px;">';
         } else {
-          fotografContainer.innerHTML = '<p style="color: #999;">Dosya yüklenmemiş</p>';
+          fotografContainer.innerHTML = '<p style="color: #999;">Ürün fotoğrafı yüklenmemiş</p>';
         }
         
         const siparisInfo = document.getElementById('siparisInfo');
@@ -181,19 +181,28 @@
       planlar.forEach((plan, index) => {
         const adimNo = index + 1;
         const banyoInfo = plan.HedefBanyoAdi ? plan.HedefBanyoAdi : 'Banyo belirtilmemiş';
+        const sureMin = plan.SureDkMin || 0;
+        const sureMax = plan.SureDkMax || 0;
+        const sureInfo = (sureMin > 0 || sureMax > 0) ? `(Min: ${sureMin} dk, Max: ${sureMax} dk)` : '';
         
         html += `
-          <div id="adim_${plan.PlanID}" style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+          <div id="adim_${plan.PlanID}" style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;" data-suremin="${sureMin}" data-suremax="${sureMax}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div>
                 <h4 style="font-size: 18px; color: #333; margin-bottom: 5px;">
                   ${adimNo}. Adım: ${plan.ProsesAdi}
                 </h4>
                 <p style="color: #666; font-size: 14px;">
-                  <strong>Planlanan Banyo:</strong> ${banyoInfo}
+                  <strong>Planlanan Banyo:</strong> ${banyoInfo} <span style="color: #007bff; font-weight: 500;">${sureInfo}</span>
                 </p>
               </div>
               <div id="status_${plan.PlanID}" style="font-weight: bold; color: #999;">BEKLİYOR</div>
+            </div>
+            
+            <div id="sureInfo_${plan.PlanID}" style="display: none; text-align: center; margin-bottom: 10px;">
+              <span style="background: #e7f3ff; padding: 5px 15px; border-radius: 15px; font-size: 13px; color: #004085;">
+                ⏱️ Min: <strong>${sureMin}</strong> dk | Max: <strong>${sureMax}</strong> dk
+              </span>
             </div>
             
             <div id="timer_${plan.PlanID}" style="font-size: 32px; font-weight: bold; color: #667eea; text-align: center; margin: 15px 0; display: none;">
@@ -201,9 +210,9 @@
             </div>
             
             <div style="text-align: center;">
-              <button id="btn_${plan.PlanID}" onclick="toggleAdim(${plan.PlanID}, '${banyoInfo}')" 
-                style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600;"
-                ${index > 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+              <button id="btn_${plan.PlanID}" onclick="toggleAdim(${plan.PlanID}, '${banyoInfo}', ${sureMin}, ${sureMax})" 
+                style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 5px; font-size: 16px; font-weight: 600; ${index > 0 ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;'}"
+                ${index > 0 ? 'disabled' : ''}>
                 BAŞLAT
               </button>
             </div>
@@ -215,7 +224,7 @@
       currentAdimIndex = 0;
     }
     
-    function toggleAdim(planId, banyoAdi) {
+    function toggleAdim(planId, banyoAdi, sureMin, sureMax) {
       operatorId = document.getElementById('operatorSelect').value;
       
       if (!operatorId) {
@@ -226,7 +235,7 @@
       const btn = document.getElementById('btn_' + planId);
       const timer = document.getElementById('timer_' + planId);
       const status = document.getElementById('status_' + planId);
-      const warning = document.getElementById('warning_' + planId);
+      const sureInfoEl = document.getElementById('sureInfo_' + planId);
       
       console.log('toggleAdim çağrıldı, planId:', planId, 'btn.textContent:', btn.textContent);
       
@@ -249,9 +258,12 @@
             status.textContent = 'DEVAM EDİYOR';
             status.style.color = '#ffc107';
             timer.style.display = 'block';
+            if (sureInfoEl) sureInfoEl.style.display = 'block';
             
             adimTimers[planId] = {
               startTime: new Date(),
+              sureMin: sureMin || 0,
+              sureMax: sureMax || 0,
               interval: setInterval(() => updateAdimTimer(planId), 1000)
             };
           } else {
@@ -279,17 +291,30 @@
             status.textContent = 'TAMAMLANDI';
             status.style.color = '#28a745';
             timer.style.display = 'none';
-            if (warning) warning.style.display = 'none';
+            const sureInfoElFinish = document.getElementById('sureInfo_' + planId);
+            if (sureInfoElFinish) sureInfoElFinish.style.display = 'none';
             
             currentAdimIndex++;
             const planlar = plans[siparisId];
             
+            console.log('Adım tamamlandı. currentAdimIndex:', currentAdimIndex, 'planlar.length:', planlar.length);
+            
             if (currentAdimIndex < planlar.length) {
               const nextPlan = planlar[currentAdimIndex];
+              console.log('Sonraki plan:', nextPlan, 'PlanID:', nextPlan.PlanID);
               const nextBtn = document.getElementById('btn_' + nextPlan.PlanID);
-              nextBtn.disabled = false;
-              nextBtn.style.opacity = '1';
-              nextBtn.style.cursor = 'pointer';
+              console.log('Sonraki buton:', nextBtn);
+              if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.style.opacity = '1';
+                nextBtn.style.cursor = 'pointer';
+                nextBtn.style.background = '#28a745';
+                nextBtn.style.pointerEvents = 'auto';
+                nextBtn.removeAttribute('disabled');
+                console.log('Sonraki buton aktif edildi');
+              } else {
+                console.log('Sonraki buton bulunamadı! btn_' + nextPlan.PlanID);
+              }
             } else {
               document.getElementById('kaliteyeGonderContainer').style.display = 'block';
             }
@@ -306,10 +331,26 @@
       
       const now = new Date();
       const elapsed = Math.floor((now - timer.startTime) / 1000);
+      const elapsedMinutes = Math.floor(elapsed / 60);
       
       const timerEl = document.getElementById('timer_' + planId);
+      const btn = document.getElementById('btn_' + planId);
+      
       if (timerEl) {
         timerEl.textContent = formatTime(elapsed);
+        
+        if (timer.sureMin > 0 && timer.sureMax > 0) {
+          if (elapsedMinutes < timer.sureMin) {
+            timerEl.style.color = '#ffc107';
+            btn.style.background = '#dc3545';
+          } else if (elapsedMinutes >= timer.sureMin && elapsedMinutes <= timer.sureMax) {
+            timerEl.style.color = '#28a745';
+            btn.style.background = '#28a745';
+          } else if (elapsedMinutes > timer.sureMax) {
+            timerEl.style.color = '#dc3545';
+            btn.style.background = '#dc3545';
+          }
+        }
       }
     }
     

@@ -77,7 +77,7 @@ module.exports = (db) => {
       const fotografYolu = req.file ? req.file.filename : null;
       
       await db.query(
-        'UPDATE siparisdetay SET Miktar = ?, CizimDosyaYolu = ? WHERE SiparisDetayID = ?',
+        'UPDATE siparisdetay SET Miktar = ?, UrunFotografi = ? WHERE SiparisDetayID = ?',
         [toplam_miktar, fotografYolu, siparis_id]
       );
       
@@ -209,7 +209,13 @@ module.exports = (db) => {
           sd.SiparisDetayID, 
           s.SiparisKodu, 
           sd.ParcaAdi, 
+          sd.ParcaTuru,
           sd.Miktar,
+          sd.ParcaNumarasi,
+          sd.CizimDosyaYolu,
+          sd.CizimRevizyonu,
+          sd.KaplamaStandardiKodu,
+          s.TerminTarihi,
           COALESCE(m.MusteriAdi, 'Müşteri Bilgisi Yok') as MusteriAdi
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
@@ -346,7 +352,8 @@ module.exports = (db) => {
           sd.ParcaNumarasi,
           sd.CizimRevizyonu,
           sd.KaplamaStandardiKodu,
-          sd.CizimDosyaYolu, 
+          sd.CizimDosyaYolu,
+          sd.UrunFotografi, 
           m.MusteriAdi,
           s.SiparisKodu,
           s.TerminTarihi

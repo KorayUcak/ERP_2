@@ -64,11 +64,21 @@
       <form action="/personel/uretim-planlama" method="POST">
         <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 5px; font-weight: 500;">Sipariş Seçin:</label>
-          <select name="siparis_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+          <select name="siparis_id" id="siparisSelect" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
             <option value="">Bir Sipariş Seçiniz</option>
             <% if (orders && orders.length > 0) { %>
               <% orders.forEach(function(order) { %>
-                <option value="<%= order.SiparisDetayID %>">
+                <option value="<%= order.SiparisDetayID %>" 
+                  data-cizim="<%= order.CizimDosyaYolu || '' %>"
+                  data-parcaadi="<%= order.ParcaAdi || '' %>"
+                  data-parcaturu="<%= order.ParcaTuru || '' %>"
+                  data-miktar="<%= order.Miktar || '' %>"
+                  data-parcanumarasi="<%= order.ParcaNumarasi || '' %>"
+                  data-cizimrevizyonu="<%= order.CizimRevizyonu || '' %>"
+                  data-kaplamastandardi="<%= order.KaplamaStandardiKodu || '' %>"
+                  data-termintarihi="<%= order.TerminTarihi || '' %>"
+                  data-musteriadi="<%= order.MusteriAdi || '' %>"
+                  data-sipariskodu="<%= order.SiparisKodu || '' %>">
                   <%= order.SiparisKodu %> - <%= order.MusteriAdi %> - <%= order.ParcaAdi %> (<%= order.Miktar %> Adet)
                 </option>
               <% }); %>
@@ -76,6 +86,19 @@
               <option value="" disabled>Listelenecek sipariş yok</option>
             <% } %>
           </select>
+        </div>
+        
+        <div id="siparisDetayContainer" style="display: none; margin-bottom: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div id="cizimContainer" style="background: #e7f3ff; padding: 20px; border-radius: 5px; text-align: center;">
+              <h4 style="margin-bottom: 15px; color: #004085;">Teknik Çizim</h4>
+              <div id="cizimGorsel"></div>
+            </div>
+            <div id="bilgiContainer" style="background: #f8f9fa; padding: 20px; border-radius: 5px;">
+              <h4 style="margin-bottom: 15px; color: #333;">Sipariş Detayları</h4>
+              <div id="siparisBilgileri" style="font-size: 14px; line-height: 2;"></div>
+            </div>
+          </div>
         </div>
         
         <div style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
@@ -228,5 +251,48 @@
       </form>
     </div>
   </div>
+  
+  <script>
+    document.getElementById('siparisSelect').addEventListener('change', function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const siparisDetayContainer = document.getElementById('siparisDetayContainer');
+      const cizimGorsel = document.getElementById('cizimGorsel');
+      const siparisBilgileri = document.getElementById('siparisBilgileri');
+      
+      if (!this.value) {
+        siparisDetayContainer.style.display = 'none';
+        return;
+      }
+      
+      siparisDetayContainer.style.display = 'block';
+      
+      const cizimYolu = selectedOption.getAttribute('data-cizim');
+      if (cizimYolu && cizimYolu !== '' && cizimYolu !== 'null' && cizimYolu !== 'undefined') {
+        cizimGorsel.innerHTML = '<img src="/uploads/' + cizimYolu + '" style="max-width: 100%; max-height: 300px; border-radius: 5px; border: 1px solid #ddd;">';
+      } else {
+        cizimGorsel.innerHTML = '<p style="color: #999;">Teknik çizim yüklenmemiş</p>';
+      }
+      
+      const terminTarihi = selectedOption.getAttribute('data-termintarihi');
+      let terminStr = '-';
+      if (terminTarihi && terminTarihi !== '' && terminTarihi !== 'null') {
+        const tarih = new Date(terminTarihi);
+        terminStr = tarih.toLocaleDateString('tr-TR');
+      }
+      
+      let bilgiHTML = '';
+      bilgiHTML += '<div><strong>Sipariş Kodu:</strong> ' + (selectedOption.getAttribute('data-sipariskodu') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Müşteri:</strong> ' + (selectedOption.getAttribute('data-musteriadi') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Parça Adı:</strong> ' + (selectedOption.getAttribute('data-parcaadi') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Parça Türü:</strong> ' + (selectedOption.getAttribute('data-parcaturu') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Miktar:</strong> ' + (selectedOption.getAttribute('data-miktar') || '-') + ' Adet</div>';
+      bilgiHTML += '<div><strong>Parça Numarası:</strong> ' + (selectedOption.getAttribute('data-parcanumarasi') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Çizim Revizyonu:</strong> ' + (selectedOption.getAttribute('data-cizimrevizyonu') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Kaplama Standardı:</strong> ' + (selectedOption.getAttribute('data-kaplamastandardi') || '-') + '</div>';
+      bilgiHTML += '<div><strong>Termin Tarihi:</strong> ' + terminStr + '</div>';
+      
+      siparisBilgileri.innerHTML = bilgiHTML;
+    });
+  </script>
 </body>
 </html>
