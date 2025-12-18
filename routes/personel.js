@@ -81,28 +81,7 @@ module.exports = (db) => {
         [toplam_miktar, fotografYolu, siparis_id]
       );
       
-      const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
-      const [orders] = await db.query(`
-        SELECT 
-          sd.SiparisDetayID, 
-          s.SiparisKodu, 
-          m.MusteriAdi, 
-          sd.ParcaAdi, 
-          sd.Miktar 
-        FROM siparisdetay sd
-        JOIN siparisler s ON sd.SiparisID = s.SiparisID
-        JOIN musteriler m ON s.MusteriID = m.MusteriID
-        WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
-        ORDER BY s.SiparisKodu DESC
-      `);
-      
-      res.render('personel/mal-kabul', { 
-        username: req.session.username, 
-        operators: operatorler,
-        orders,
-        success: 'Mal kabul işlemi tamamlandı!', 
-        error: null 
-      });
+      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('Mal Kabul POST Hatası:', error);
       const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
@@ -194,7 +173,7 @@ module.exports = (db) => {
       }
       
       console.log('✅ Giriş Kalite ve Kayıp Kaydı Başarılı. SiparisDetayID:', siparisDetayId);
-      res.redirect('/personel/giris-kalite?status=success');
+      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('Giriş Kalite POST Hatası:', error);
       console.error('Hata Detayı:', error.message);
@@ -288,31 +267,7 @@ module.exports = (db) => {
         asamalar: prosesAdlari.map(p => p.ProsesAdi)
       };
       
-      
-      
-      const [siparisler] = await db.query(`
-        SELECT sd.SiparisDetayID, sd.SiparisID, sd.ParcaAdi, sd.ParcaTuru, m.MusteriAdi
-        FROM siparisdetay sd
-        JOIN siparisler s ON sd.SiparisID = s.SiparisID
-        JOIN musteriler m ON s.MusteriID = m.MusteriID
-        JOIN kalitekontrolgiris kkg ON sd.SiparisDetayID = kkg.SiparisDetayID
-        LEFT JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
-        WHERE up.PlanID IS NULL
-        ORDER BY sd.SiparisDetayID DESC
-      `);
-      
-      const [prosesler] = await db.query('SELECT ProsesID, ProsesAdi FROM prosesler ORDER BY ProsesAdi');
-      
-      const [banyolar] = await db.query('SELECT BanyoAdimID, BanyoAdi FROM standardbanyoadimlari ORDER BY BanyoAdi ASC');
-      
-      res.render('personel/uretim-planlama', { 
-        username: req.session.username, 
-        orders: siparisler,
-        processes: prosesler,
-        baths: banyolar,
-        success: 'Üretim planlaması kaydedildi!', 
-        error: null 
-      });
+      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('Üretim Planlama POST Hatası:', error);
       const [siparisler] = await db.query(`
@@ -527,7 +482,7 @@ module.exports = (db) => {
         ['Tamamlandı', siparis_id]
       );
       
-      res.json({ success: true, redirect: '/personel/cikis-kalite' });
+      res.json({ success: true, redirect: '/personel?success=1' });
     } catch (error) {
       console.error('İşlem Bitir Hatası:', error);
       res.json({ success: false, error: error.message });
@@ -577,23 +532,7 @@ module.exports = (db) => {
         [siparis_detay_id, hataVarMi, hataKoduFinal, aciklamaFinal]
       );
       
-      const [pendingQc] = await db.query(`
-        SELECT DISTINCT sd.SiparisDetayID, sd.ParcaAdi, sd.ParcaNumarasi, sd.Miktar, s.SiparisKodu, m.MusteriAdi
-        FROM siparisdetay sd
-        JOIN siparisler s ON sd.SiparisID = s.SiparisID
-        JOIN musteriler m ON s.MusteriID = m.MusteriID
-        JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
-        WHERE up.Durum = 'Tamamlandı'
-        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
-        ORDER BY s.SiparisKodu DESC
-      `);
-      
-      res.render('personel/cikis-kalite', { 
-        username: req.session.username, 
-        pendingQc,
-        success: 'Kalite kontrolü başarıyla kaydedildi!', 
-        error: null 
-      });
+      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('Çıkış Kalite Kaydet Hatası:', error);
       const [pendingQc] = await db.query(`
@@ -642,11 +581,19 @@ module.exports = (db) => {
       const { siparis_kodu } = req.body;
       
       const [[siparis]] = await db.query(`
-        SELECT sd.*, m.MusteriAdi
+        SELECT 
+          sd.SiparisDetayID,
+          sd.ParcaAdi,
+          sd.ParcaTuru,
+          sd.Miktar,
+          sd.KaplamaStandardiKodu,
+          s.SiparisID,
+          s.SiparisKodu,
+          m.MusteriAdi
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
-        WHERE sd.SiparisDetayID = ?
+        WHERE s.SiparisKodu = ?
       `, [siparis_kodu]);
       
       const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
@@ -686,18 +633,11 @@ module.exports = (db) => {
       const { siparis_id, operator_id, iade_nedeni, iade_miktar, aciklama } = req.body;
       
       await db.query(
-        'INSERT INTO iadeler (SiparisDetayID, OperatorID, IadeNedeni, IadeMiktar, Aciklama, IadeTarihi) VALUES (?, ?, ?, ?, ?, NOW())',
-        [siparis_id, operator_id, iade_nedeni, iade_miktar, aciklama]
+        'INSERT INTO iadeler (SiparisID, IadeTarihi, IadeNedeni, TekrarIslemYapilacakMi) VALUES (?, NOW(), ?, ?)',
+        [siparis_id, iade_nedeni, iade_miktar > 0 ? 1 : 0]
       );
       
-      const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
-      res.render('personel/iade-yonetimi', { 
-        username: req.session.username, 
-        operatorler, 
-        siparis: null, 
-        success: 'İade kaydı başarıyla oluşturuldu!', 
-        error: null 
-      });
+      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('İade Kaydetme Hatası:', error);
       const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
@@ -772,21 +712,7 @@ module.exports = (db) => {
         [tuketim_miktar, kimyasal_id]
       );
       
-      const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
-      const [kimyasallar] = await db.query(`
-        SELECT k.KimyasalID, k.KimyasalAdi, k.Birim, ks.MevcutMiktar as StokMiktar
-        FROM kimyasallar k
-        LEFT JOIN kimyasalstok ks ON k.KimyasalID = ks.KimyasalID
-        ORDER BY k.KimyasalAdi
-      `);
-      
-      res.render('personel/kimyasal-tuketim', { 
-        username: req.session.username, 
-        operators: operatorler, 
-        chemicals: kimyasallar, 
-        success: 'Kimyasal tüketimi kaydedildi!', 
-        error: null 
-      });
+      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('Kimyasal Tüketim POST Hatası:', error);
       const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
@@ -938,11 +864,7 @@ module.exports = (db) => {
       
       await connection.commit();
       
-      res.render('personel/siparis-olustur', { 
-        username: req.session.username, 
-        success: `Sipariş başarıyla oluşturuldu! Sipariş Kodu: ${SiparisKodu} | Dosya: ${cizimDosyaYolu}`, 
-        error: null 
-      });
+      res.redirect('/personel?success=1');
       
     } catch (error) {
       await connection.rollback();
