@@ -384,6 +384,148 @@ app.post('/admin/stok-yenile', authMiddleware, adminMiddleware, async (req, res)
   }
 });
 
+// Raporlar Sayfası
+app.get('/admin/raporlar', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    // Adım bazlı kayıp özeti
+    const [adimKayiplar] = await db.query(`
+      SELECT AdimKodu, SUM(KayipMiktar) as ToplamKayip
+      FROM islem_adim_kayitlari
+      GROUP BY AdimKodu
+      ORDER BY AdimKodu
+    `);
+    
+    // Adım/Operatör detay listesi
+    const [adimKayitlar] = await db.query(`
+      SELECT 
+        iak.KayitID,
+        iak.AdimKodu,
+        iak.ToplamMiktar,
+        iak.KayipMiktar,
+        iak.KayitTarihi,
+        iak.Aciklama,
+        s.SiparisKodu,
+        sd.ParcaAdi,
+        o.AdSoyad as OperatorAdi
+      FROM islem_adim_kayitlari iak
+      JOIN siparisdetay sd ON iak.SiparisDetayID = sd.SiparisDetayID
+      JOIN siparisler s ON sd.SiparisID = s.SiparisID
+      LEFT JOIN operatorler o ON iak.OperatorID = o.OperatorID
+      ORDER BY iak.KayitTarihi DESC
+      LIMIT 50
+    `);
+    
+    // Sipariş bazlı miktar takibi
+    const [siparisMiktarlar] = await db.query(`
+      SELECT 
+        s.SiparisKodu,
+        sd.ParcaAdi,
+        sd.Miktar as BaslangicMiktar,
+        MAX(CASE WHEN iak.AdimKodu = 'MAL_KABUL' THEN iak.ToplamMiktar END) as MalKabulMiktar,
+        MAX(CASE WHEN iak.AdimKodu = 'MAL_KABUL' THEN iak.KayipMiktar END) as MalKabulKayip,
+        MAX(CASE WHEN iak.AdimKodu = 'GIRIS_KALITE' THEN iak.ToplamMiktar END) as GirisKaliteMiktar,
+        MAX(CASE WHEN iak.AdimKodu = 'GIRIS_KALITE' THEN iak.KayipMiktar END) as GirisKaliteKayip,
+        MAX(CASE WHEN iak.AdimKodu = 'CIKIS_KALITE' THEN iak.ToplamMiktar END) as CikisKaliteMiktar,
+        MAX(CASE WHEN iak.AdimKodu = 'CIKIS_KALITE' THEN iak.KayipMiktar END) as CikisKaliteKayip,
+        SUM(iak.KayipMiktar) as ToplamKayip
+      FROM siparisdetay sd
+      JOIN siparisler s ON sd.SiparisID = s.SiparisID
+      LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID
+      GROUP BY sd.SiparisDetayID, s.SiparisKodu, sd.ParcaAdi, sd.Miktar
+      ORDER BY s.SiparisKodu DESC
+      LIMIT 50
+    `);
+    
+    res.render('admin/raporlar', {
+      username: req.session.username,
+      adimKayiplar,
+      adimKayitlar,
+      siparisMiktarlar
+    });
+  } catch (error) {
+    console.error('Raporlar Hatası:', error);
+    res.render('admin/raporlar', {
+      username: req.session.username,
+      adimKayiplar: [],
+      adimKayitlar: [],
+      siparisMiktarlar: []
+    });
+  }
+});
+
+// Operatör Süreleri Sayfası
+app.get('/admin/operator-sureleri', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    // Operatör bazlı toplam süre özeti
+    const [operatorOzet] = await db.query(`
+      SELECT 
+        o.AdSoyad as OperatorAdi,
+        SUM(h.HarcananSureDk) as ToplamSure,
+        COUNT(h.HareketID) as IslemSayisi
+      FROM hareketler h
+      JOIN operatorler o ON h.OperatorID = o.OperatorID
+      WHERE h.BitisZamani IS NOT NULL
+      GROUP BY h.OperatorID, o.AdSoyad
+      ORDER BY ToplamSure DESC
+    `);
+    
+    // Operatör banyo adımı detayları
+    const [banyoSureleri] = await db.query(`
+      SELECT 
+        o.AdSoyad as OperatorAdi,
+        s.SiparisKodu,
+        p.ProsesAdi,
+        sba.BanyoAdi,
+        sba.SureDkMin,
+        sba.SureDkMax,
+        h.BaslangicZamani,
+        h.BitisZamani,
+        h.HarcananSureDk
+      FROM hareketler h
+      JOIN operatorler o ON h.OperatorID = o.OperatorID
+      JOIN uretimplanlama up ON h.PlanID = up.PlanID
+      JOIN siparisdetay sd ON up.SiparisDetayID = sd.SiparisDetayID
+      JOIN siparisler s ON sd.SiparisID = s.SiparisID
+      LEFT JOIN prosesler p ON h.ProsesID = p.ProsesID
+      LEFT JOIN standardbanyoadimlari sba ON h.BanyoAdimID = sba.BanyoAdimID
+      ORDER BY h.BaslangicZamani DESC
+      LIMIT 50
+    `);
+    
+    // Operatör bazlı banyo süre ortalamaları
+    const [banyoOrtalama] = await db.query(`
+      SELECT 
+        o.AdSoyad as OperatorAdi,
+        sba.BanyoAdi,
+        COUNT(h.HareketID) as IslemSayisi,
+        AVG(h.HarcananSureDk) as OrtalamaSure,
+        MIN(h.HarcananSureDk) as MinSure,
+        MAX(h.HarcananSureDk) as MaxSure
+      FROM hareketler h
+      JOIN operatorler o ON h.OperatorID = o.OperatorID
+      LEFT JOIN standardbanyoadimlari sba ON h.BanyoAdimID = sba.BanyoAdimID
+      WHERE h.BitisZamani IS NOT NULL AND h.HarcananSureDk > 0
+      GROUP BY h.OperatorID, o.AdSoyad, h.BanyoAdimID, sba.BanyoAdi
+      ORDER BY o.AdSoyad, sba.BanyoAdi
+    `);
+    
+    res.render('admin/operator-sureleri', {
+      username: req.session.username,
+      operatorOzet,
+      banyoSureleri,
+      banyoOrtalama
+    });
+  } catch (error) {
+    console.error('Operatör Süreleri Hatası:', error);
+    res.render('admin/operator-sureleri', {
+      username: req.session.username,
+      operatorOzet: [],
+      banyoSureleri: [],
+      banyoOrtalama: []
+    });
+  }
+});
+
 app.get('/test-db', async (req, res) => {
   try {
     const [rows] = await db.query('SELECT 1');

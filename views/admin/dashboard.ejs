@@ -82,11 +82,19 @@
   </style>
 </head>
 <body>
-  <nav class="navbar">
-    <h1>Simya ERP - Yönetici Paneli</h1>
-    <div class="navbar-right">
-      <span class="user-info">Hoş geldiniz, <%= username %></span>
-      <a href="/logout" class="logout-btn">Çıkış Yap</a>
+  <nav class="navbar" style="display: block;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <h1>Simya ERP - Yönetici Paneli</h1>
+      <div class="navbar-right">
+        <span class="user-info">Hoş geldiniz, <%= username %></span>
+        <a href="/logout" class="logout-btn">Çıkış Yap</a>
+      </div>
+    </div>
+    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+      <a href="/admin" style="color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; background: rgba(255,255,255,0.3); font-size: 14px;">Ana Sayfa</a>
+      <a href="/admin/raporlar" style="color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-size: 14px;">Raporlar</a>
+      <a href="/admin/operator-sureleri" style="color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-size: 14px;">Operatör Süreleri</a>
+      <a href="/admin/stok-yenile" style="color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; font-size: 14px;">Stok Yenile</a>
     </div>
   </nav>
   

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operatör Süreleri - Simya ERP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+    .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .navbar-header h1 { font-size: 24px; }
+    .navbar-right { display: flex; align-items: center; gap: 20px; }
+    .user-info { font-size: 14px; }
+    .logout-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 20px; border-radius: 5px; cursor: pointer; text-decoration: none; transition: background 0.3s; }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); }
+    .navbar-menu { display: flex; gap: 5px; flex-wrap: wrap; }
+    .navbar-menu a { color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; transition: background 0.3s; font-size: 14px; }
+    .navbar-menu a:hover { background: rgba(255,255,255,0.2); }
+    .navbar-menu a.active { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1400px; margin: 30px auto; padding: 0 20px; }
+    .content-card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+    .content-card h2 { color: #333; font-size: 24px; margin-bottom: 20px; border-bottom: 3px solid #667eea; padding-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #667eea; color: white; padding: 12px; text-align: left; font-weight: 600; }
+    td { padding: 12px; border-bottom: 1px solid #ddd; }
+    tr:hover { background: #f8f9fa; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-info { background: #d1ecf1; color: #0c5460; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+    .stat-card h3 { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }
+    .stat-card p { font-size: 28px; font-weight: bold; }
+    .stat-card small { opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-header">
+      <h1>Simya ERP - Yönetici Paneli</h1>
+      <div class="navbar-right">
+        <span class="user-info">Hoş geldiniz, <%= username %></span>
+        <a href="/logout" class="logout-btn">Çıkış Yap</a>
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <a href="/admin">Ana Sayfa</a>
+      <a href="/admin/raporlar">Raporlar</a>
+      <a href="/admin/operator-sureleri" class="active">Operatör Süreleri</a>
+      <a href="/admin/stok-yenile">Stok Yenile</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <!-- Operatör Bazlı Toplam Süre Özeti -->
+    <div class="content-card">
+      <h2>⏱️ Operatör Bazlı Toplam Çalışma Süreleri</h2>
+      <div class="stats-grid">
+        <% operatorOzet.forEach(op => { %>
+          <div class="stat-card">
+            <h3><%= op.OperatorAdi %></h3>
+            <p><%= op.ToplamSure || 0 %> dk</p>
+            <small><%= op.IslemSayisi || 0 %> işlem tamamlandı</small>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Operatör Banyo Adımı Detayları -->
+    <div class="content-card">
+      <h2>🛁 Operatör - Banyo Adımı Süre Detayları</h2>
+      <% if (banyoSureleri.length === 0) { %>
+        <div style="background: #d1ecf1; color: #0c5460; padding: 20px; border-radius: 5px; text-align: center;">
+          <p>Henüz tamamlanmış banyo işlemi bulunmuyor.</p>
+        </div>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Operatör</th>
+              <th>Sipariş Kodu</th>
+              <th>Proses</th>
+              <th>Banyo Adımı</th>
+              <th>Başlangıç</th>
+              <th>Bitiş</th>
+              <th>Harcanan Süre</th>
+              <th>Standart Süre</th>
+              <th>Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% banyoSureleri.forEach(kayit => { %>
+              <tr>
+                <td><strong><%= kayit.OperatorAdi %></strong></td>
+                <td><%= kayit.SiparisKodu %></td>
+                <td><%= kayit.ProsesAdi %></td>
+                <td><%= kayit.BanyoAdi || '-' %></td>
+                <td><%= kayit.BaslangicZamani ? new Date(kayit.BaslangicZamani).toLocaleString('tr-TR') : '-' %></td>
+                <td><%= kayit.BitisZamani ? new Date(kayit.BitisZamani).toLocaleString('tr-TR') : '-' %></td>
+                <td style="font-weight: bold;"><%= kayit.HarcananSureDk || 0 %> dk</td>
+                <td><%= kayit.SureDkMin && kayit.SureDkMax ? kayit.SureDkMin + '-' + kayit.SureDkMax + ' dk' : '-' %></td>
+                <td>
+                  <% if (!kayit.BitisZamani) { %>
+                    <span class="badge badge-warning">Devam Ediyor</span>
+                  <% } else if (kayit.SureDkMax && kayit.HarcananSureDk > kayit.SureDkMax) { %>
+                    <span class="badge badge-danger">Süre Aşımı</span>
+                  <% } else { %>
+                    <span class="badge badge-success">Tamamlandı</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+
+    <!-- Operatör Bazlı Banyo Süre Ortalamaları -->
+    <div class="content-card">
+      <h2>📈 Operatör Bazlı Banyo Süre Ortalamaları</h2>
+      <% if (banyoOrtalama.length === 0) { %>
+        <div style="background: #d1ecf1; color: #0c5460; padding: 20px; border-radius: 5px; text-align: center;">
+          <p>Henüz yeterli veri bulunmuyor.</p>
+        </div>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Operatör</th>
+              <th>Banyo Adımı</th>
+              <th>İşlem Sayısı</th>
+              <th>Ortalama Süre</th>
+              <th>Min Süre</th>
+              <th>Max Süre</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% banyoOrtalama.forEach(kayit => { %>
+              <tr>
+                <td><strong><%= kayit.OperatorAdi %></strong></td>
+                <td><%= kayit.BanyoAdi || '-' %></td>
+                <td><%= kayit.IslemSayisi %></td>
+                <td style="font-weight: bold;"><%= Math.round(kayit.OrtalamaSure) %> dk</td>
+                <td><%= kayit.MinSure %> dk</td>
+                <td><%= kayit.MaxSure %> dk</td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

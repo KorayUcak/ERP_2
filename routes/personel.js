@@ -73,12 +73,20 @@ module.exports = (db) => {
 
   router.post('/mal-kabul', authMiddleware, personelMiddleware, upload.single('fotograf'), async (req, res) => {
     try {
-      const { siparis_id, operator_id, toplam_miktar } = req.body;
+      const { siparis_id, operator_id, toplam_miktar, eksik_miktar } = req.body;
       const fotografYolu = req.file ? req.file.filename : null;
+      const eksikMiktarValue = eksik_miktar ? parseInt(eksik_miktar) : 0;
       
       await db.query(
         'UPDATE siparisdetay SET Miktar = ?, UrunFotografi = ? WHERE SiparisDetayID = ?',
         [toplam_miktar, fotografYolu, siparis_id]
+      );
+      
+      // İşlem adım kaydı oluştur
+      await db.query(
+        `INSERT INTO islem_adim_kayitlari (SiparisDetayID, AdimKodu, OperatorID, ToplamMiktar, KayipMiktar, Aciklama) 
+         VALUES (?, 'MAL_KABUL', ?, ?, ?, ?)`,
+        [siparis_id, operator_id, toplam_miktar, eksikMiktarValue, eksikMiktarValue > 0 ? 'Teslimatta eksik/hasarlı ürün' : null]
       );
       
       res.redirect('/personel?success=1');
@@ -147,11 +155,12 @@ module.exports = (db) => {
 
   router.post('/giris-kalite', authMiddleware, personelMiddleware, async (req, res) => {
     try {
-      const { siparis_id, operator_id, kayip_miktar, kayip_aciklama } = req.body;
+      const { siparis_id, operator_id, toplam_miktar, kayip_miktar, kayip_aciklama } = req.body;
       
       const siparisDetayId = siparis_id;
-      const uygunMiktar = 0;
+      const toplamMiktarValue = toplam_miktar ? parseInt(toplam_miktar) : 0;
       const kayipMiktarValue = kayip_miktar ? parseFloat(kayip_miktar) : 0;
+      const uygunMiktar = toplamMiktarValue - kayipMiktarValue;
       const personelID = operator_id || (req.session.user ? req.session.user.KullaniciID : (req.session.userId || 0));
       
       const sqlGiris = `
@@ -171,6 +180,13 @@ module.exports = (db) => {
         
         await db.query(sqlKayip, [siparisDetayId, kayipMiktarValue, kayip_aciklama || '', 'FIRE-GIRIS']);
       }
+      
+      // İşlem adım kaydı oluştur
+      await db.query(
+        `INSERT INTO islem_adim_kayitlari (SiparisDetayID, AdimKodu, OperatorID, ToplamMiktar, KayipMiktar, Aciklama) 
+         VALUES (?, 'GIRIS_KALITE', ?, ?, ?, ?)`,
+        [siparisDetayId, operator_id, toplamMiktarValue, kayipMiktarValue, kayip_aciklama || null]
+      );
       
       console.log('✅ Giriş Kalite ve Kayıp Kaydı Başarılı. SiparisDetayID:', siparisDetayId);
       res.redirect('/personel?success=1');
@@ -521,8 +537,10 @@ module.exports = (db) => {
 
   router.post('/cikis-kalite-kaydet', authMiddleware, personelMiddleware, async (req, res) => {
     try {
-      const { siparis_detay_id, durum, hata_kodu, aciklama } = req.body;
+      const { siparis_detay_id, toplam_miktar, uygunsuz_miktar, durum, hata_kodu, aciklama } = req.body;
       
+      const toplamMiktarValue = toplam_miktar ? parseInt(toplam_miktar) : 0;
+      const uygunsuzMiktarValue = uygunsuz_miktar ? parseInt(uygunsuz_miktar) : 0;
       const hataVarMi = durum === 'hata' ? 1 : 0;
       const hataKoduFinal = hataVarMi ? hata_kodu : null;
       const aciklamaFinal = aciklama || null;
@@ -530,6 +548,13 @@ module.exports = (db) => {
       await db.query(
         'INSERT INTO kalitekontrolcikis (SiparisDetayID, KontrolTarihi, HataVarMi, HataKodu, HataAciklamasi) VALUES (?, NOW(), ?, ?, ?)',
         [siparis_detay_id, hataVarMi, hataKoduFinal, aciklamaFinal]
+      );
+      
+      // İşlem adım kaydı oluştur
+      await db.query(
+        `INSERT INTO islem_adim_kayitlari (SiparisDetayID, AdimKodu, OperatorID, ToplamMiktar, KayipMiktar, Aciklama) 
+         VALUES (?, 'CIKIS_KALITE', NULL, ?, ?, ?)`,
+        [siparis_detay_id, toplamMiktarValue, uygunsuzMiktarValue, aciklamaFinal]
       );
       
       res.redirect('/personel?success=1');
