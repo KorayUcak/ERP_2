@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mal Kabul - Simya ERP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+    .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .navbar-header h1 { font-size: 24px; }
+    .navbar-right { display: flex; align-items: center; gap: 20px; }
+    .user-info { font-size: 14px; }
+    .logout-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 20px; border-radius: 5px; cursor: pointer; text-decoration: none; transition: background 0.3s; }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); }
+    .navbar-menu { display: flex; gap: 5px; flex-wrap: wrap; }
+    .navbar-menu a { color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; transition: background 0.3s; font-size: 14px; }
+    .navbar-menu a:hover { background: rgba(255,255,255,0.2); }
+    .navbar-menu a.active { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+    .content-card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .content-card h2 { color: #333; font-size: 28px; margin-bottom: 20px; }
+    .content-card p { color: #666; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-header">
+      <h1>Simya ERP - Personel Paneli</h1>
+      <div class="navbar-right">
+        <span class="user-info">Hoş geldiniz, <%= username %></span>
+        <a href="/logout" class="logout-btn">Çıkış Yap</a>
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <a href="/personel">Ana Sayfa</a>
+      <a href="/personel/siparis-olustur">Sipariş Oluşturma</a>
+      <a href="/personel/mal-kabul" class="active">Mal Kabul</a>
+      <a href="/personel/giris-kalite">Giriş Kalite</a>
+      <a href="/personel/uretim-planlama">Üretim Planlama</a>
+      <a href="/personel/operator">Operatör</a>
+      <a href="/personel/cikis-kalite">Çıkış Kalite</a>
+      <a href="/personel/iade-yonetimi">İade Yönetimi</a>
+      <a href="/personel/kimyasal-tuketim">Kimyasal Tüketim</a>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="content-card">
+      <h2>Mal Kabul</h2>
+      
+      <% if (success) { %>
+        <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+          <%= success %>
+        </div>
+      <% } %>
+      
+      <% if (error) { %>
+        <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+          <%= error %>
+        </div>
+      <% } %>
+      
+      <form action="/personel/mal-kabul" method="POST" enctype="multipart/form-data">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Sipariş Seçin:</label>
+          <select name="siparis_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <option value="">Bir Sipariş Seçiniz</option>
+            <% if (orders && orders.length > 0) { %>
+              <% orders.forEach(function(order) { %>
+                <option value="<%= order.SiparisDetayID %>">
+                  <%= order.SiparisKodu %> - <%= order.MusteriAdi %> - <%= order.ParcaAdi %> (<%= order.Miktar %> Adet)
+                </option>
+              <% }); %>
+            <% } else { %>
+              <option value="" disabled>Listelenecek sipariş yok</option>
+            <% } %>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Operatör Seçin:</label>
+          <select name="operator_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <option value="">Operatör Seçiniz...</option>
+            <% if (typeof operators !== 'undefined') { %>
+              <% operators.forEach(function(op) { %>
+                <option value="<%= op.OperatorID %>"><%= op.AdSoyad %></option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Toplam Miktar:</label>
+          <input type="number" name="toplam_miktar" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Ürün Fotoğrafı:</label>
+          <input type="file" name="fotograf" accept="image/*" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        
+        <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+          Mal Kabul Tamamla
+        </button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

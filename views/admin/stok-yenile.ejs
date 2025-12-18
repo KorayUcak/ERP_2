@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stok Yenileme - Simya ERP</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .navbar h1 {
+      font-size: 24px;
+    }
+    
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .user-info {
+      font-size: 14px;
+    }
+    
+    .logout-btn {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 1px solid white;
+      padding: 8px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    
+    .logout-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 0 20px;
+    }
+    
+    .content-card {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .content-card h2 {
+      color: #333;
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <h1>Simya ERP - Stok Yenileme</h1>
+    <div class="navbar-right">
+      <span class="user-info">Hoş geldiniz, <%= username %></span>
+      <a href="/admin" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Dashboard'a Dön</a>
+      <a href="/logout" class="logout-btn">Çıkış Yap</a>
+    </div>
+  </nav>
+  
+  <div class="container">
+    <div class="content-card">
+      <h2>Kimyasal Stok Yenileme</h2>
+      
+      <% if (success) { %>
+        <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+          <%= success %>
+        </div>
+      <% } %>
+      
+      <% if (error) { %>
+        <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+          <%= error %>
+        </div>
+      <% } %>
+      
+      <form action="/admin/stok-yenile" method="POST">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Kimyasal Seçin:</label>
+          <select name="kimyasal_id" id="kimyasalSelect" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <option value="">-- Kimyasal Seçin --</option>
+            <% kimyasallar.forEach(kimyasal => { %>
+              <option value="<%= kimyasal.id %>" data-stok="<%= kimyasal.stok_miktar || 0 %>" data-birim="<%= kimyasal.birim %>">
+                <%= kimyasal.kimyasal_adi %> (Mevcut: <%= kimyasal.stok_miktar || 0 %> <%= kimyasal.birim %>)
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        
+        <div id="stokBilgi" style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: none; border: 1px solid #007bff;">
+          <h3 style="margin-bottom: 10px; font-size: 18px; color: #004085;">Mevcut Stok Bilgisi</h3>
+          <p style="font-size: 24px; font-weight: bold; color: #004085;" id="stokMiktar">0</p>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Giriş Miktarı:</label>
+          <input type="number" name="giris_miktar" step="0.01" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+        </div>
+        
+        <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+          Stok Girişi Yap
+        </button>
+      </form>
+      
+      <div style="margin-top: 40px;">
+        <h3 style="margin-bottom: 15px; color: #333;">Kimyasal Stok Listesi</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="background: #f8f9fa;">
+              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Kimyasal Adı</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Mevcut Stok</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Birim</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% kimyasallar.forEach(kimyasal => { %>
+              <tr>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.kimyasal_adi %></td>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-weight: bold;"><%= kimyasal.stok_miktar || 0 %></td>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.birim %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.getElementById('kimyasalSelect').addEventListener('change', function() {
+      const stok = this.options[this.selectedIndex].dataset.stok;
+      const birim = this.options[this.selectedIndex].dataset.birim;
+      if (stok) {
+        document.getElementById('stokBilgi').style.display = 'block';
+        document.getElementById('stokMiktar').textContent = stok + ' ' + birim + ' mevcut';
+      } else {
+        document.getElementById('stokBilgi').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

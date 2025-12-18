@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operatör - Simya ERP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+    .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .navbar-header h1 { font-size: 24px; }
+    .navbar-right { display: flex; align-items: center; gap: 20px; }
+    .user-info { font-size: 14px; }
+    .logout-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 20px; border-radius: 5px; cursor: pointer; text-decoration: none; transition: background 0.3s; }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); }
+    .navbar-menu { display: flex; gap: 5px; flex-wrap: wrap; }
+    .navbar-menu a { color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; transition: background 0.3s; font-size: 14px; }
+    .navbar-menu a:hover { background: rgba(255,255,255,0.2); }
+    .navbar-menu a.active { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+    .content-card { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .content-card h2 { color: #333; font-size: 28px; margin-bottom: 20px; }
+    .content-card p { color: #666; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-header">
+      <h1>Simya ERP - Personel Paneli</h1>
+      <div class="navbar-right">
+        <span class="user-info">Hoş geldiniz, <%= username %></span>
+        <a href="/logout" class="logout-btn">Çıkış Yap</a>
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <a href="/personel">Ana Sayfa</a>
+      <a href="/personel/siparis-olustur">Sipariş Oluşturma</a>
+      <a href="/personel/mal-kabul">Mal Kabul</a>
+      <a href="/personel/giris-kalite">Giriş Kalite</a>
+      <a href="/personel/uretim-planlama">Üretim Planlama</a>
+      <a href="/personel/operator" class="active">Operatör</a>
+      <a href="/personel/cikis-kalite">Çıkış Kalite</a>
+      <a href="/personel/iade-yonetimi">İade Yönetimi</a>
+      <a href="/personel/kimyasal-tuketim">Kimyasal Tüketim</a>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="content-card">
+      <h2>Operatör Ekranı</h2>
+      
+      <% if (success) { %>
+        <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+          <%= success %>
+        </div>
+      <% } %>
+      
+      <% if (error) { %>
+        <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+          <%= error %>
+        </div>
+      <% } %>
+      
+      <div style="margin-bottom: 30px;">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Operatör Seçin:</label>
+          <select id="operatorSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <option value="">Operatör Seçiniz...</option>
+            <% if (typeof operators !== 'undefined') { %>
+              <% operators.forEach(function(op) { %>
+                <option value="<%= op.OperatorID %>"><%= op.AdSoyad %></option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Sipariş Seçin:</label>
+          <select id="siparisSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <option value="">-- Sipariş Seçin --</option>
+            <% siparisler.forEach(siparis => { %>
+              <option value="<%= siparis.SiparisDetayID %>" data-fotograf="<%= siparis.CizimDosyaYolu %>">
+                #<%= siparis.SiparisDetayID %> - <%= siparis.MusteriAdi %> - <%= siparis.ParcaAdi %>
+              </option>
+            <% }) %>
+          </select>
+        </div>
+        
+        <div id="siparisDetay" style="display: none;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+            <div>
+              <h3 style="margin-bottom: 15px;">Çizim Dosyası</h3>
+              <div id="fotografContainer" style="border: 2px solid #ddd; border-radius: 5px; padding: 10px; min-height: 200px; display: flex; align-items: center; justify-content: center; background: #f8f9fa;">
+                <p style="color: #999;">Dosya yüklenmemiş</p>
+              </div>
+            </div>
+            
+            <div>
+              <h3 style="margin-bottom: 15px;">Sipariş Bilgileri</h3>
+              <div id="siparisInfo" style="background: #f8f9fa; padding: 15px; border-radius: 5px; min-height: 200px;">
+                <p style="color: #999;">Sipariş bilgisi yüklenecek</p>
+              </div>
+            </div>
+          </div>
+          
+          <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+            <strong style="color: #856404;">⚠️ Talimat:</strong>
+            <p style="color: #856404; margin-top: 5px;">Aşağıdaki adımları sırasıyla uygulamanız gerekmektedir. Her adımı tamamlamadan diğerine geçemezsiniz.</p>
+          </div>
+          
+          <div id="adimsContainer" style="margin-bottom: 20px;">
+            <h3 style="margin-bottom: 15px; font-size: 22px; color: #333;">Üretim Adımları</h3>
+            <div id="adimlarListesi"></div>
+          </div>
+          
+          <div id="kaliteyeGonderContainer" style="display: none; text-align: center; padding: 30px; background: #d4edda; border-radius: 10px;">
+            <h3 style="color: #155724; margin-bottom: 15px;">✅ Tüm Adımlar Tamamlandı!</h3>
+            <form action="/personel/cikis-kalite" method="GET">
+              <button type="submit" style="background: #28a745; color: white; border: none; padding: 15px 40px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: 600;">
+                KALİTEYE GÖNDER
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    let siparisId = null;
+    let operatorId = null;
+    let currentAdimIndex = 0;
+    let adimTimers = {};
+    const plans = <%- JSON.stringify(plans) %>;
+    
+    document.getElementById('siparisSelect').addEventListener('change', function() {
+      siparisId = this.value;
+      const fotograf = this.options[this.selectedIndex].dataset.fotograf;
+      
+      if (siparisId) {
+        document.getElementById('siparisDetay').style.display = 'block';
+        
+        const fotografContainer = document.getElementById('fotografContainer');
+        if (fotograf && fotograf !== 'null' && fotograf !== 'undefined') {
+          fotografContainer.innerHTML = '<img src="/uploads/' + fotograf + '" style="max-width: 100%; max-height: 300px; border-radius: 5px;">';
+        } else {
+          fotografContainer.innerHTML = '<p style="color: #999;">Dosya yüklenmemiş</p>';
+        }
+        
+        const siparisInfo = document.getElementById('siparisInfo');
+        const selectedOption = this.options[this.selectedIndex];
+        const text = selectedOption.text;
+        siparisInfo.innerHTML = '<div style="font-size: 16px; line-height: 1.8;"><strong>Sipariş:</strong> ' + text + '</div>';
+        
+        renderAdimlar();
+      } else {
+        document.getElementById('siparisDetay').style.display = 'none';
+      }
+    });
+    
+    function renderAdimlar() {
+      const adimlarListesi = document.getElementById('adimlarListesi');
+      const planlar = plans[siparisId];
+      
+      if (!planlar || planlar.length === 0) {
+        adimlarListesi.innerHTML = '<p style="color: #999;">Bu sipariş için planlama bulunamadı</p>';
+        return;
+      }
+      
+      let html = '';
+      planlar.forEach((plan, index) => {
+        const adimNo = index + 1;
+        const banyoInfo = plan.HedefBanyoAdi ? plan.HedefBanyoAdi : 'Banyo belirtilmemiş';
+        const sureInfo = plan.SureDkMin && plan.SureDkMax ? 
+          `(${plan.SureDkMin}-${plan.SureDkMax} dk)` : '';
+        
+        html += `
+          <div id="adim_${plan.PlanID}" style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div>
+                <h4 style="font-size: 18px; color: #333; margin-bottom: 5px;">
+                  ${adimNo}. Adım: ${plan.ProsesAdi}
+                </h4>
+                <p style="color: #666; font-size: 14px;">
+                  <strong>Planlanan Banyo:</strong> ${banyoInfo} ${sureInfo}
+                </p>
+              </div>
+              <div id="status_${plan.PlanID}" style="font-weight: bold; color: #999;">BEKLİYOR</div>
+            </div>
+            
+            <div id="timer_${plan.PlanID}" style="font-size: 32px; font-weight: bold; color: #667eea; text-align: center; margin: 15px 0; display: none;">
+              00:00:00
+            </div>
+            
+            <div style="text-align: center;">
+              <button id="btn_${plan.PlanID}" onclick="toggleAdim(${plan.PlanID}, '${banyoInfo}')" 
+                style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: 600;"
+                ${index > 0 ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                BAŞLAT
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      
+      adimlarListesi.innerHTML = html;
+      currentAdimIndex = 0;
+    }
+    
+    function toggleAdim(planId, banyoAdi) {
+      operatorId = document.getElementById('operatorSelect').value;
+      
+      if (!operatorId) {
+        alert('Lütfen önce operatör seçin!');
+        return;
+      }
+      
+      const btn = document.getElementById('btn_' + planId);
+      const timer = document.getElementById('timer_' + planId);
+      const status = document.getElementById('status_' + planId);
+      
+      if (btn.textContent === 'BAŞLAT') {
+        fetch('/personel/operator/baslat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            siparis_id: siparisId, 
+            operator_id: operatorId, 
+            plan_id: planId,
+            banyo_adi: banyoAdi 
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            btn.textContent = 'BİTİR';
+            btn.style.background = '#dc3545';
+            status.textContent = 'DEVAM EDİYOR';
+            status.style.color = '#ffc107';
+            timer.style.display = 'block';
+            
+            adimTimers[planId] = {
+              startTime: new Date(),
+              interval: setInterval(() => updateAdimTimer(planId), 1000)
+            };
+          } else {
+            alert('Hata: ' + data.error);
+          }
+        });
+      } else {
+        if (adimTimers[planId]) {
+          clearInterval(adimTimers[planId].interval);
+        }
+        
+        fetch('/personel/operator/bitir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ siparis_id: siparisId, plan_id: planId })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            status.textContent = 'TAMAMLANDI';
+            status.style.color = '#28a745';
+            
+            currentAdimIndex++;
+            const planlar = plans[siparisId];
+            
+            if (currentAdimIndex < planlar.length) {
+              const nextPlan = planlar[currentAdimIndex];
+              const nextBtn = document.getElementById('btn_' + nextPlan.PlanID);
+              nextBtn.disabled = false;
+              nextBtn.style.opacity = '1';
+              nextBtn.style.cursor = 'pointer';
+            } else {
+              document.getElementById('kaliteyeGonderContainer').style.display = 'block';
+            }
+          } else {
+            alert('Hata: ' + data.error);
+          }
+        });
+      }
+    }
+    
+    function updateAdimTimer(planId) {
+      const timer = adimTimers[planId];
+      if (!timer) return;
+      
+      const now = new Date();
+      const elapsed = Math.floor((now - timer.startTime) / 1000);
+      const timerEl = document.getElementById('timer_' + planId);
+      if (timerEl) {
+        timerEl.textContent = formatTime(elapsed);
+      }
+    }
+    
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+  </script>
+</body>
+</html>
