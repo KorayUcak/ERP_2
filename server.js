@@ -344,16 +344,30 @@ app.get('/admin/stok-yenile', authMiddleware, adminMiddleware, async (req, res) 
 app.post('/admin/stok-yenile', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const { kimyasal_id, giris_miktar } = req.body;
+    console.log('Stok Yenile Request:', { kimyasal_id, giris_miktar });
     
     await db.query(
-      'INSERT INTO kimyasalstokgiris (KimyasalID, Miktar, GirisTarihi) VALUES (?, ?, NOW())',
+      'INSERT INTO kimyasalstokgiris (KimyasalID, Miktar, GirisTarihi, BirimMaliyet) VALUES (?, ?, CURDATE(), 0)',
       [kimyasal_id, giris_miktar]
     );
+    console.log('kimyasalstokgiris INSERT başarılı');
     
-    await db.query(
-      'UPDATE kimyasalstok SET MevcutMiktar = MevcutMiktar + ? WHERE KimyasalID = ?',
-      [giris_miktar, kimyasal_id]
+    const [existingStock] = await db.query(
+      'SELECT KimyasalID FROM kimyasalstok WHERE KimyasalID = ?',
+      [kimyasal_id]
     );
+    
+    if (existingStock.length > 0) {
+      await db.query(
+        'UPDATE kimyasalstok SET MevcutMiktar = MevcutMiktar + ? WHERE KimyasalID = ?',
+        [giris_miktar, kimyasal_id]
+      );
+    } else {
+      await db.query(
+        'INSERT INTO kimyasalstok (KimyasalID, MevcutMiktar) VALUES (?, ?)',
+        [kimyasal_id, giris_miktar]
+      );
+    }
     
     const [kimyasallar] = await db.query(`
       SELECT 

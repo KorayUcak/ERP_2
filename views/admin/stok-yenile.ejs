@@ -136,6 +136,7 @@
             <tr style="background: #f8f9fa;">
               <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Kimyasal Adı</th>
               <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Mevcut Stok</th>
+              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Asgari Stok Seviyesi</th>
               <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Birim</th>
             </tr>
           </thead>
@@ -143,7 +144,8 @@
             <% kimyasallar.forEach(kimyasal => { %>
               <tr>
                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.kimyasal_adi %></td>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-weight: bold;"><%= kimyasal.stok_miktar || 0 %></td>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-weight: bold; <%= (kimyasal.stok_miktar || 0) < (kimyasal.asgari_seviye || 0) ? 'color: #dc3545;' : 'color: #28a745;' %>"><%= kimyasal.stok_miktar || 0 %></td>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.asgari_seviye || 0 %></td>
                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.birim %></td>
               </tr>
             <% }) %>
