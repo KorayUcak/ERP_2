@@ -367,25 +367,22 @@
         return;
       }
       
-      if (confirm('Tüm adımlar tamamlandı. İşlemi bitirip çıkış kaliteye göndermek istiyor musunuz?')) {
-        fetch('/personel/operator/islem-bitir', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ siparis_id: siparisId })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert('İşlem başarıyla tamamlandı! Çıkış kalite sayfasına yönlendiriliyorsunuz.');
-            window.location.href = data.redirect;
-          } else {
-            alert('Hata: ' + data.error);
-          }
-        })
-        .catch(error => {
-          alert('Bir hata oluştu: ' + error.message);
-        });
-      }
+      fetch('/personel/operator/islem-bitir', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siparis_id: siparisId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/personel';
+        } else {
+          alert('Hata: ' + data.error);
+        }
+      })
+      .catch(error => {
+        alert('Bir hata oluştu: ' + error.message);
+      });
     }
   </script>
 </body>

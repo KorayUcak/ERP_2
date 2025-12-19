@@ -157,7 +157,7 @@ app.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
       WHERE kkc.KcCikisID IS NULL
-      ORDER BY s.TerminTarihi ASC
+      ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
     
@@ -228,7 +228,7 @@ app.post('/admin/siparis-ara', authMiddleware, adminMiddleware, async (req, res)
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
       WHERE kkc.KcCikisID IS NULL
-      ORDER BY s.TerminTarihi ASC
+      ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
     
@@ -296,7 +296,7 @@ app.post('/admin/musteri-siparisler', authMiddleware, adminMiddleware, async (re
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
       WHERE kkc.KcCikisID IS NULL
-      ORDER BY s.TerminTarihi ASC
+      ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
     

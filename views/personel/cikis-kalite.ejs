@@ -134,7 +134,10 @@
         
         <div class="form-group">
           <label>Toplam Miktar (Kontrol Edilen):</label>
-          <input type="number" name="toplam_miktar" required min="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <input type="number" name="toplam_miktar" required min="0" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <span id="beklenenMiktarModal" style="background: #e7f3ff; color: #004085; padding: 10px 15px; border-radius: 5px; font-weight: 500; display: none;"></span>
+          </div>
         </div>
         
         <div class="form-group">
@@ -173,10 +176,26 @@
   </div>
   
   <script>
+    const pendingQcData = {
+      <% if (pendingQc && pendingQc.length > 0) { %>
+        <% pendingQc.forEach(function(siparis) { %>
+          '<%= siparis.SiparisDetayID %>': { girisKaliteMiktar: <%= siparis.GirisKaliteMiktar || 0 %> },
+        <% }); %>
+      <% } %>
+    };
+    
     function openModal(siparisDetayId, siparisKodu, parcaAdi) {
       document.getElementById('siparisDetayId').value = siparisDetayId;
       document.getElementById('modalSiparisInfo').textContent = siparisKodu + ' - ' + parcaAdi;
       document.getElementById('qcModal').style.display = 'block';
+      
+      const beklenenSpan = document.getElementById('beklenenMiktarModal');
+      if (pendingQcData[siparisDetayId] && pendingQcData[siparisDetayId].girisKaliteMiktar > 0) {
+        beklenenSpan.textContent = 'Beklenen (Giriş Kalite): ' + pendingQcData[siparisDetayId].girisKaliteMiktar + ' Adet';
+        beklenenSpan.style.display = 'inline-block';
+      } else {
+        beklenenSpan.style.display = 'none';
+      }
     }
     
     function closeModal() {

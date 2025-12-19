@@ -92,7 +92,10 @@
         
         <div style="margin-bottom: 20px;">
           <label style="display: block; margin-bottom: 5px; font-weight: 500;">Toplam Miktar (Kontrol Edilen):</label>
-          <input type="number" name="toplam_miktar" required min="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <input type="number" name="toplam_miktar" required min="0" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <span id="beklenenMiktar" style="background: #e7f3ff; color: #004085; padding: 10px 15px; border-radius: 5px; font-weight: 500; display: none;"></span>
+          </div>
         </div>
         
         <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
@@ -121,6 +124,26 @@
         alert("✅ Giriş Kalite Kontrolü Başarıyla Tamamlandı! Sipariş planlamaya aktarıldı.");
         window.history.replaceState(null, null, window.location.pathname);
     }
+    
+    const ordersData = {
+      <% if (orders && orders.length > 0) { %>
+        <% orders.forEach(function(order) { %>
+          '<%= order.SiparisDetayID %>': { malKabulMiktar: <%= order.MalKabulMiktar || 0 %> },
+        <% }); %>
+      <% } %>
+    };
+    
+    document.getElementById('siparisSelect').addEventListener('change', function() {
+      const selectedId = this.value;
+      const beklenenSpan = document.getElementById('beklenenMiktar');
+      
+      if (selectedId && ordersData[selectedId] && ordersData[selectedId].malKabulMiktar > 0) {
+        beklenenSpan.textContent = 'Beklenen (Mal Kabul): ' + ordersData[selectedId].malKabulMiktar + ' Adet';
+        beklenenSpan.style.display = 'inline-block';
+      } else {
+        beklenenSpan.style.display = 'none';
+      }
+    });
 </script>
 </body>
 </html>

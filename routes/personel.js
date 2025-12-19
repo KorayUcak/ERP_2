@@ -49,6 +49,7 @@ module.exports = (db) => {
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC
       `);
       
@@ -104,6 +105,7 @@ module.exports = (db) => {
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC
       `);
       res.render('personel/mal-kabul', { 
@@ -126,13 +128,19 @@ module.exports = (db) => {
           s.SiparisKodu, 
           m.MusteriAdi, 
           sd.ParcaAdi, 
-          sd.Miktar 
+          sd.Miktar,
+          iak.ToplamMiktar as MalKabulMiktar
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
-        WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID AND iak.AdimKodu = 'MAL_KABUL'
+        WHERE sd.SiparisDetayID IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'MAL_KABUL')
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC
       `);
+      
+      console.log('Giriş Kalite Orders:', JSON.stringify(orders, null, 2));
       
       res.render('personel/giris-kalite', { 
         username: req.session.username, 
@@ -217,6 +225,7 @@ module.exports = (db) => {
         LEFT JOIN musteriler m ON s.MusteriID = m.MusteriID
         WHERE sd.SiparisDetayID IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM uretimplanlama)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC
       `);
       
@@ -508,15 +517,19 @@ module.exports = (db) => {
   router.get('/cikis-kalite', authMiddleware, personelMiddleware, async (req, res) => {
     try {
       const [pendingQc] = await db.query(`
-        SELECT DISTINCT sd.SiparisDetayID, sd.ParcaAdi, sd.ParcaNumarasi, sd.Miktar, s.SiparisKodu, m.MusteriAdi
+        SELECT DISTINCT sd.SiparisDetayID, sd.ParcaAdi, sd.ParcaNumarasi, sd.Miktar, s.SiparisKodu, m.MusteriAdi,
+          kkg.UygunMiktar as GirisKaliteMiktar
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
+        LEFT JOIN kalitekontrolgiris kkg ON sd.SiparisDetayID = kkg.SiparisDetayID
         WHERE up.Durum = 'Tamamlandı'
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC
       `);
+      
+      console.log('Çıkış Kalite PendingQc:', JSON.stringify(pendingQc, null, 2));
       
       res.render('personel/cikis-kalite', { 
         username: req.session.username, 
