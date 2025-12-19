@@ -54,18 +54,65 @@
   </nav>
 
   <div class="container">
-    <!-- Adım Bazlı Kayıp Özeti -->
+    <!-- İade Yönetimi Özeti (Son 30 Gün) -->
     <div class="content-card">
-      <h2>📊 Adım Bazlı Kayıp Raporu</h2>
+      <h2>📦 İade Yönetimi Özeti (Son 30 Gün)</h2>
       <div class="stats-grid">
-        <% adimKayiplar.forEach(kayip => { %>
-          <div class="stat-card" style="background: <%= kayip.AdimKodu === 'MAL_KABUL' ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' : kayip.AdimKodu === 'GIRIS_KALITE' ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' : 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' %>;">
-            <h3><%= kayip.AdimKodu.replace('_', ' ') %></h3>
-            <p><%= kayip.ToplamKayip || 0 %></p>
-            <small>Toplam Kayıp Miktar</small>
-          </div>
-        <% }) %>
+        <div class="stat-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <h3>Toplam İade</h3>
+          <p><%= iadeOzet.toplam_iade || 0 %></p>
+          <small>Adet Sipariş</small>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <h3>Toplam İade Miktarı</h3>
+          <p><%= iadeOzet.toplam_iade_miktari || 0 %></p>
+          <small>Adet Ürün</small>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+          <h3>Tekrar İşleme Girecek</h3>
+          <p><%= iadeOzet.tekrar_islem_sayisi || 0 %></p>
+          <small>Adet İade</small>
+        </div>
       </div>
+      
+      <!-- Son 5 İade Listesi -->
+      <h3 style="margin-top: 25px; margin-bottom: 15px; color: #333;">Son İadeler</h3>
+      <% if (sonIadeler.length === 0) { %>
+        <div style="background: #d1ecf1; color: #0c5460; padding: 20px; border-radius: 5px; text-align: center;">
+          <p>Son 30 günde iade kaydı bulunmuyor.</p>
+        </div>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Sipariş Kodu</th>
+              <th>Müşteri</th>
+              <th>İade Miktarı</th>
+              <th>Tekrar İşlem</th>
+              <th>İade Nedeni</th>
+              <th>Tarih</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sonIadeler.forEach(iade => { %>
+              <tr>
+                <td><strong><%= iade.SiparisKodu %></strong></td>
+                <td><%= iade.MusteriAdi %></td>
+                <td><%= iade.ToplamIadeMiktari || 0 %></td>
+                <td>
+                  <% if (iade.TekrarIslemYapilacakMi == 1) { %>
+                    <span class="badge badge-warning">Evet</span>
+                  <% } else { %>
+                    <span class="badge badge-info">Hayır</span>
+                  <% } %>
+                </td>
+                <td><%= iade.IadeNedeni || '-' %></td>
+                <td><%= new Date(iade.IadeTarihi).toLocaleDateString('tr-TR') %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
     </div>
 
     <!-- Adım/Operatör Detay Tablosu -->

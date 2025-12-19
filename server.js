@@ -138,7 +138,7 @@ app.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
     `);
     
     const [stokUyari] = await db.query(`
-      SELECT k.KimyasalAdi, ks.MevcutMiktar as mevcut_miktar, k.AsgariStokSeviyesi as asgari_seviye, 
+      SELECT k.KimyasalAdi as kimyasal_adi, ks.MevcutMiktar as mevcut_miktar, k.AsgariStokSeviyesi as asgari_seviye, 
              (k.AsgariStokSeviyesi - ks.MevcutMiktar) as eksik_miktar
       FROM kimyasalstok ks
       JOIN kimyasallar k ON ks.KimyasalID = k.KimyasalID
@@ -156,7 +156,8 @@ app.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
       JOIN siparisler s ON sd.SiparisID = s.SiparisID
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
-      WHERE kkc.KcCikisID IS NULL
+      LEFT JOIN iadeler i ON s.SiparisID = i.SiparisID
+      WHERE i.IadeID IS NULL
       ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
@@ -211,7 +212,7 @@ app.post('/admin/siparis-ara', authMiddleware, adminMiddleware, async (req, res)
     `);
     
     const [stokUyari] = await db.query(`
-      SELECT k.KimyasalAdi, ks.MevcutMiktar as mevcut_miktar, k.AsgariStokSeviyesi as asgari_seviye, 
+      SELECT k.KimyasalAdi as kimyasal_adi, ks.MevcutMiktar as mevcut_miktar, k.AsgariStokSeviyesi as asgari_seviye, 
              (k.AsgariStokSeviyesi - ks.MevcutMiktar) as eksik_miktar
       FROM kimyasalstok ks
       JOIN kimyasallar k ON ks.KimyasalID = k.KimyasalID
@@ -227,7 +228,8 @@ app.post('/admin/siparis-ara', authMiddleware, adminMiddleware, async (req, res)
       JOIN siparisler s ON sd.SiparisID = s.SiparisID
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
-      WHERE kkc.KcCikisID IS NULL
+      LEFT JOIN iadeler i ON s.SiparisID = i.SiparisID
+      WHERE i.IadeID IS NULL
       ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
@@ -279,7 +281,7 @@ app.post('/admin/musteri-siparisler', authMiddleware, adminMiddleware, async (re
     `);
     
     const [stokUyari] = await db.query(`
-      SELECT k.KimyasalAdi, ks.MevcutMiktar as mevcut_miktar, k.AsgariStokSeviyesi as asgari_seviye, 
+      SELECT k.KimyasalAdi as kimyasal_adi, ks.MevcutMiktar as mevcut_miktar, k.AsgariStokSeviyesi as asgari_seviye, 
              (k.AsgariStokSeviyesi - ks.MevcutMiktar) as eksik_miktar
       FROM kimyasalstok ks
       JOIN kimyasallar k ON ks.KimyasalID = k.KimyasalID
@@ -295,7 +297,8 @@ app.post('/admin/musteri-siparisler', authMiddleware, adminMiddleware, async (re
       JOIN siparisler s ON sd.SiparisID = s.SiparisID
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
-      WHERE kkc.KcCikisID IS NULL
+      LEFT JOIN iadeler i ON s.SiparisID = i.SiparisID
+      WHERE i.IadeID IS NULL
       ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
@@ -401,6 +404,37 @@ app.post('/admin/stok-yenile', authMiddleware, adminMiddleware, async (req, res)
 // Raporlar Sayfası
 app.get('/admin/raporlar', authMiddleware, adminMiddleware, async (req, res) => {
   try {
+    // İade Özeti (Son 30 gün)
+    const [iadeOzetResult] = await db.query(`
+      SELECT 
+        COUNT(DISTINCT i.IadeID) as toplam_iade,
+        COALESCE(SUM(id.IadeMiktari), 0) as toplam_iade_miktari,
+        SUM(CASE WHEN i.TekrarIslemYapilacakMi = 1 THEN 1 ELSE 0 END) as tekrar_islem_sayisi
+      FROM iadeler i
+      LEFT JOIN iadedetay id ON i.IadeID = id.IadeID
+      WHERE i.IadeTarihi >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    `);
+    const iadeOzet = iadeOzetResult[0] || { toplam_iade: 0, toplam_iade_miktari: 0, tekrar_islem_sayisi: 0 };
+    
+    // Son 5 İade (İade bazlı)
+    const [sonIadeler] = await db.query(`
+      SELECT 
+        i.IadeID,
+        i.IadeTarihi,
+        i.IadeNedeni,
+        i.TekrarIslemYapilacakMi,
+        s.SiparisKodu,
+        m.MusteriAdi,
+        COALESCE(SUM(id.IadeMiktari), 0) as ToplamIadeMiktari
+      FROM iadeler i
+      JOIN siparisler s ON i.SiparisID = s.SiparisID
+      JOIN musteriler m ON s.MusteriID = m.MusteriID
+      LEFT JOIN iadedetay id ON i.IadeID = id.IadeID
+      GROUP BY i.IadeID, i.IadeTarihi, i.IadeNedeni, i.TekrarIslemYapilacakMi, s.SiparisKodu, m.MusteriAdi
+      ORDER BY i.IadeTarihi DESC, i.IadeID DESC
+      LIMIT 5
+    `);
+    
     // Adım bazlı kayıp özeti
     const [adimKayiplar] = await db.query(`
       SELECT AdimKodu, SUM(KayipMiktar) as ToplamKayip
@@ -452,6 +486,8 @@ app.get('/admin/raporlar', authMiddleware, adminMiddleware, async (req, res) => 
     
     res.render('admin/raporlar', {
       username: req.session.username,
+      iadeOzet,
+      sonIadeler,
       adimKayiplar,
       adimKayitlar,
       siparisMiktarlar
@@ -460,6 +496,8 @@ app.get('/admin/raporlar', authMiddleware, adminMiddleware, async (req, res) => 
     console.error('Raporlar Hatası:', error);
     res.render('admin/raporlar', {
       username: req.session.username,
+      iadeOzet: { toplam_iade: 0, toplam_iade_miktari: 0, tekrar_islem_sayisi: 0 },
+      sonIadeler: [],
       adimKayiplar: [],
       adimKayitlar: [],
       siparisMiktarlar: []

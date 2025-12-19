@@ -141,11 +141,14 @@
             </tr>
           </thead>
           <tbody>
-            <% kimyasallar.forEach(kimyasal => { %>
+            <% kimyasallar.forEach(kimyasal => { 
+              const mevcutStok = Number(kimyasal.stok_miktar) || 0;
+              const asgariSeviye = Number(kimyasal.asgari_seviye) || 0;
+            %>
               <tr>
                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.kimyasal_adi %></td>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-weight: bold; <%= (kimyasal.stok_miktar || 0) < (kimyasal.asgari_seviye || 0) ? 'color: #dc3545;' : 'color: #28a745;' %>"><%= kimyasal.stok_miktar || 0 %></td>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.asgari_seviye || 0 %></td>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-weight: bold; font-size: 16px;<% if (mevcutStok < asgariSeviye) { %> color: #dc3545; background-color: #f8d7da;<% } else { %> color: #28a745; background-color: #d4edda;<% } %>"><%= mevcutStok %></td>
+                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= asgariSeviye %></td>
                 <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.birim %></td>
               </tr>
             <% }) %>
