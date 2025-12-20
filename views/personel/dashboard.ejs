@@ -7,25 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/enterprise-style.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f7fafc; color: #1a202c; }
-    .navbar { background: #ffffff; color: #2d3748; padding: 16px 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-bottom: 1px solid #e2e8f0; }
-    .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .navbar-header h1 { font-size: 20px; font-weight: 700; color: #1a202c; }
-    .navbar-right { display: flex; align-items: center; gap: 20px; }
-    .user-info { font-size: 13px; color: #718096; }
-    .logout-btn { background: #ffffff; color: #4a5568; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; font-weight: 500; }
-    .logout-btn:hover { background: #f7fafc; border-color: #cbd5e0; transform: translateY(-1px); }
-    .navbar-menu { display: flex; gap: 8px; flex-wrap: wrap; }
-    .navbar-menu a { color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; transition: all 200ms ease; font-size: 14px; font-weight: 500; }
-    .navbar-menu a:hover { background: #edf2f7; color: #1a202c; }
-    .navbar-menu a.active { background: #edf2f7; color: #1a202c; font-weight: 600; }
-    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
-    .welcome-card { background: #ffffff; padding: 48px; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center; transition: all 200ms ease; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .welcome-card:hover { border-color: #667eea; box-shadow: 0 4px 12px rgba(102,126,234,0.15); transform: translateY(-2px); }
-    .welcome-card h2 { color: #1a202c; font-size: 28px; font-weight: 700; margin-bottom: 16px; }
-    .welcome-card p { color: #718096; font-size: 15px; line-height: 1.6; }
+    .welcome-card { background: var(--bg-surface); padding: 48px; border-radius: 12px; border: 1px solid var(--neutral-200); text-align: center; transition: all 200ms ease; box-shadow: var(--shadow-sm); }
+    .welcome-card:hover { border-color: var(--primary-500); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .welcome-card h2 { color: var(--neutral-800); font-size: 28px; font-weight: 700; margin-bottom: 16px; }
+    .welcome-card p { color: var(--neutral-500); font-size: 15px; line-height: 1.6; }
   </style>
 </head>
 <body>
@@ -51,6 +38,82 @@
   </nav>
   
   <div class="container">
+    <% if (bildirimler && bildirimler.length > 0) { %>
+      <div class="content-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; margin-bottom: 24px;">
+        <h2 style="color: white; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 12px; margin-bottom: 20px;">📢 Yönetici Bildirimleri</h2>
+        <% bildirimler.forEach(bildirim => { %>
+          <div style="background: rgba(255,255,255,0.95); padding: 16px 20px; border-radius: 10px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <div style="color: #2d3748; font-size: 15px; font-weight: 500; margin-bottom: 6px;"><%= bildirim.Mesaj %></div>
+            <div style="color: #718096; font-size: 13px;">
+              <%= new Date(bildirim.OlusturmaTarihi).toLocaleString('tr-TR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              }) %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+    
+    <% if (aktifSiparisler && aktifSiparisler.length > 0) { %>
+      <div class="content-card" style="margin-bottom: 24px;">
+        <h2>📦 Aktif Siparişler ve Durumları</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Sipariş Kodu</th>
+              <th>Müşteri</th>
+              <th>Parça Adı</th>
+              <th>Termin Tarihi</th>
+              <th>Mevcut Durum</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% aktifSiparisler.forEach(siparis => { %>
+              <tr>
+                <td style="font-weight: 600; color: var(--primary-600);"><%= siparis.SiparisKodu %></td>
+                <td><%= siparis.MusteriAdi %></td>
+                <td><%= siparis.ParcaAdi %></td>
+                <td>
+                  <% if (siparis.TerminTarihi) { %>
+                    <%= new Date(siparis.TerminTarihi).toLocaleDateString('tr-TR') %>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </td>
+                <td>
+                  <% 
+                    let badgeClass = 'badge-info';
+                    let icon = '⏳';
+                    if (siparis.Durum === 'Tamamlandı') {
+                      badgeClass = 'badge-success';
+                      icon = '✅';
+                    } else if (siparis.Durum === 'Çıkış Kalite Bekliyor') {
+                      badgeClass = 'badge-warning';
+                      icon = '🔍';
+                    } else if (siparis.Durum === 'Operatör İşlemde') {
+                      badgeClass = 'badge-info';
+                      icon = '⚙️';
+                    } else if (siparis.Durum === 'Giriş Kalite Bekliyor') {
+                      badgeClass = 'badge-warning';
+                      icon = '📋';
+                    } else if (siparis.Durum === 'Mal Kabul Bekliyor') {
+                      badgeClass = 'badge-danger';
+                      icon = '📥';
+                    }
+                  %>
+                  <span class="badge <%= badgeClass %>"><%= icon %> <%= siparis.Durum %></span>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+    
     <div class="welcome-card">
       <h2>Personel Paneline Hoş Geldiniz</h2>
       <p>Lütfen yukarıdaki menüden işlem yapmak istediğiniz modülü seçiniz.</p>

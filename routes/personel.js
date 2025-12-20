@@ -30,8 +30,52 @@ const personelMiddleware = (req, res, next) => {
 
 module.exports = (db) => {
   
-  router.get('/', authMiddleware, personelMiddleware, (req, res) => {
-    res.render('personel/dashboard', { username: req.session.username });
+  router.get('/', authMiddleware, personelMiddleware, async (req, res) => {
+    try {
+      const [bildirimler] = await db.query(
+        'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+      );
+      
+      const [aktifSiparisler] = await db.query(`
+        SELECT 
+          sd.SiparisDetayID,
+          s.SiparisKodu,
+          sd.ParcaAdi,
+          m.MusteriAdi,
+          s.TerminTarihi,
+          CASE
+            WHEN up.PlanID IS NOT NULL AND up.Durum = 'Tamamlandı' THEN 'Çıkış Kalite Bekliyor'
+            WHEN up.PlanID IS NOT NULL THEN 'Operatör İşlemde'
+            WHEN kkg.KcGirisID IS NOT NULL THEN 'Üretim Planlama Bekliyor'
+            WHEN iak.KayitID IS NOT NULL THEN 'Giriş Kalite Bekliyor'
+            ELSE 'Mal Kabul Bekliyor'
+          END as Durum
+        FROM siparisdetay sd
+        JOIN siparisler s ON sd.SiparisID = s.SiparisID
+        JOIN musteriler m ON s.MusteriID = m.MusteriID
+        LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID AND iak.AdimKodu = 'MAL_KABUL'
+        LEFT JOIN kalitekontrolgiris kkg ON sd.SiparisDetayID = kkg.SiparisDetayID
+        LEFT JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
+        LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
+        WHERE kkc.KcCikisID IS NULL 
+          AND iak.KayitID IS NOT NULL
+        ORDER BY sd.SiparisDetayID DESC
+        LIMIT 20
+      `);
+      
+      res.render('personel/dashboard', { 
+        username: req.session.username,
+        bildirimler,
+        aktifSiparisler
+      });
+    } catch (error) {
+      console.error('Personel Dashboard Hatası:', error);
+      res.render('personel/dashboard', { 
+        username: req.session.username,
+        bildirimler: [],
+        aktifSiparisler: []
+      });
+    }
   });
 
   router.get('/mal-kabul', authMiddleware, personelMiddleware, async (req, res) => {
@@ -48,8 +92,9 @@ module.exports = (db) => {
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
-        WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'MAL_KABUL')
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM uretimplanlama)
         ORDER BY s.SiparisKodu DESC
       `);
       
@@ -104,8 +149,9 @@ module.exports = (db) => {
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
-        WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        WHERE sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'MAL_KABUL')
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM uretimplanlama)
         ORDER BY s.SiparisKodu DESC
       `);
       res.render('personel/mal-kabul', { 
@@ -135,8 +181,7 @@ module.exports = (db) => {
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID AND iak.AdimKodu = 'MAL_KABUL'
         WHERE sd.SiparisDetayID IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'MAL_KABUL')
-        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
-        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'GIRIS_KALITE')
         ORDER BY s.SiparisKodu DESC
       `);
       
@@ -223,9 +268,8 @@ module.exports = (db) => {
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         LEFT JOIN musteriler m ON s.MusteriID = m.MusteriID
-        WHERE sd.SiparisDetayID IN (SELECT SiparisDetayID FROM kalitekontrolgiris)
+        WHERE sd.SiparisDetayID IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'GIRIS_KALITE')
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM uretimplanlama)
-        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC
       `);
       
@@ -342,6 +386,8 @@ module.exports = (db) => {
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
         WHERE up.Durum != 'Tamamlandı'
+        AND sd.SiparisDetayID IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'GIRIS_KALITE')
+        AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         GROUP BY sd.SiparisDetayID
         ORDER BY sd.SiparisDetayID DESC
       `);
@@ -734,8 +780,9 @@ module.exports = (db) => {
         );
       
         const miktar = parseFloat(tuketim_miktar);
+        const mevcutMiktar = stok ? parseFloat(stok.MevcutMiktar) : 0;
         
-        if (!stok || stok.MevcutMiktar < miktar) {
+        if (!stok || mevcutMiktar < miktar || mevcutMiktar <= 0) {
           await connection.rollback();
           const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
           const [kimyasallar] = await db.query(`
@@ -753,11 +800,8 @@ module.exports = (db) => {
           });
         }
         
-        await connection.query(
-          'UPDATE kimyasalstok SET MevcutMiktar = MevcutMiktar - ? WHERE KimyasalID = ?',
-          [miktar, kimyasal_id]
-        );
-        
+        // Trigger (stok_dus_trigger) otomatik olarak kimyasalstok tablosunu güncelliyor
+        // Bu yüzden sadece kimyasaltuketim'e INSERT yapmak yeterli
         await connection.query(
           'INSERT INTO kimyasaltuketim (KimyasalID, OperatorID, TuketimTarihi, TuketilenMiktar) VALUES (?, ?, NOW(), ?)',
           [kimyasal_id, operator_id, miktar]

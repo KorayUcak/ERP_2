@@ -4,174 +4,99 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yönetici Paneli - Simya ERP</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f7fafc;
-    }
-    
-    .navbar {
-      background: #ffffff;
-      color: #2d3748;
-      padding: 16px 32px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .navbar h1 {
-      font-size: 22px;
-      font-weight: 700;
-      color: #1a202c;
-    }
-    
-    .navbar-right {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    
-    .user-info {
-      font-size: 14px;
-      color: #718096;
-    }
-    
-    .logout-btn {
-      background: #ffffff;
-      color: #4a5568;
-      border: 1px solid #e2e8f0;
-      padding: 8px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.2s;
-      font-weight: 500;
-    }
-    
-    .logout-btn:hover {
-      background: #f7fafc;
-      border-color: #cbd5e0;
-      transform: translateY(-1px);
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 24px;
-    }
-    
-    .dashboard-card {
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      text-align: center;
-      border: 1px solid #e2e8f0;
-    }
-    
-    .dashboard-card h2 {
-      color: #1a202c;
-      font-size: 32px;
-      margin-bottom: 20px;
-    }
-    
-    .dashboard-card p {
-      color: #718096;
-      font-size: 16px;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/enterprise-style.css">
 </head>
 <body>
-  <nav class="navbar" style="display: block;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+  <nav class="navbar">
+    <div class="navbar-header">
       <h1>Simya ERP - Yönetici Paneli</h1>
       <div class="navbar-right">
         <span class="user-info">Hoş geldiniz, <%= username %></span>
         <a href="/logout" class="logout-btn">Çıkış Yap</a>
       </div>
     </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <a href="/admin" style="color: #1a202c; text-decoration: none; padding: 10px 16px; border-radius: 8px; background: #edf2f7; font-size: 14px; font-weight: 500; transition: all 0.2s;">Ana Sayfa</a>
-      <a href="/admin/raporlar" style="color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Raporlar</a>
-      <a href="/admin/operator-sureleri" style="color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Operatör Süreleri</a>
-      <a href="/admin/stok-yenile" style="color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all 0.2s;">Stok Yenile</a>
+    <div class="navbar-menu">
+      <a href="/admin" class="active">Ana Sayfa</a>
+      <a href="/admin/stok-yenile">Stok Yenile</a>
+      <a href="/admin/raporlar">Raporlar</a>
+      <a href="/admin/operator-sureleri">Operatör Süreleri</a>
+      <a href="/admin/kimyasal-tuketim">Kimyasal Tüketim</a>
+      <a href="/admin/bildirimler">Personel Bildirimleri</a>
     </div>
   </nav>
   
   <div class="container">
     <% if (success) { %>
-      <div style="background: #d1fae5; color: #065f46; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #a7f3d0; font-weight: 500;">
+      <div class="alert-success">
         <%= success %>
       </div>
     <% } %>
     
     <% if (error) { %>
-      <div style="background: #fee2e2; color: #991b1b; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca; font-weight: 500;">
+      <div class="alert-error">
         <%= error %>
       </div>
     <% } %>
     
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px;">
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #667eea;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Toplam Sipariş</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #667eea;"><%= stats.toplam_siparis || 0 %></p>
+    <div class="stats-grid">
+      <div class="stat-card" style="border-left: 4px solid var(--primary-500);">
+        <h3>Toplam Sipariş</h3>
+        <p style="color: var(--primary-500);"><%= stats.toplam_siparis || 0 %></p>
       </div>
       
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #f093fb;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Aktif Sipariş</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #f093fb;"><%= stats.aktif_siparis || 0 %></p>
+      <div class="stat-card" style="border-left: 4px solid #8B5CF6;">
+        <h3>Aktif Sipariş</h3>
+        <p style="color: #8B5CF6;"><%= stats.aktif_siparis || 0 %></p>
       </div>
       
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #4facfe;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Bugün Termin</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #4facfe;"><%= stats.bugun_termin || 0 %></p>
+      <div class="stat-card" style="border-left: 4px solid #06B6D4;">
+        <h3>Bugün Termin</h3>
+        <p style="color: #06B6D4;"><%= stats.bugun_termin || 0 %></p>
       </div>
       
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Geciken Sipariş</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #f59e0b;"><%= stats.geciken || 0 %></p>
+      <div class="stat-card" style="border-left: 4px solid var(--warning-500);">
+        <h3>Geciken Sipariş</h3>
+        <p style="color: var(--warning-500);"><%= stats.geciken || 0 %></p>
       </div>
       
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Toplam Operatör</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #8b5cf6;"><%= stats.toplam_operator || 0 %></p>
+      <div class="stat-card" style="border-left: 4px solid #6366F1;">
+        <h3>Toplam Operatör</h3>
+        <p style="color: #6366F1;"><%= stats.toplam_operator || 0 %></p>
       </div>
       
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #10b981;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Aktif İşlem</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #10b981;"><%= stats.aktif_islem || 0 %></p>
+      <div class="stat-card" style="border-left: 4px solid var(--accent-500);">
+        <h3>Aktif İşlem</h3>
+        <p style="color: var(--accent-500);"><%= stats.aktif_islem || 0 %></p>
       </div>
       
-      <div style="background: #ffffff; color: #1a202c; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; border-left: 4px solid #ef4444;">
-        <h3 style="font-size: 14px; margin-bottom: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Asgari Stok Altı</h3>
-        <p style="font-size: 36px; font-weight: bold; margin: 0; color: #ef4444;"><%= stats.asgari_stok_alti || 0 %></p>
+      <div class="stat-card" style="border-left: 4px solid var(--error-500);">
+        <h3>Asgari Stok Altı</h3>
+        <p style="color: var(--error-500);"><%= stats.asgari_stok_alti || 0 %></p>
       </div>
     </div>
     
     <% if (stokUyari.length > 0) { %>
-      <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; border: 1px solid #e2e8f0;">
-        <h3 style="margin-bottom: 16px; color: #dc2626; font-size: 18px; font-weight: 600;">⚠️ Stok Uyarısı</h3>
-        <table style="width: 100%; border-collapse: collapse;">
+      <div class="content-card">
+        <h2 style="color: var(--error-600);">⚠️ Stok Uyarısı</h2>
+        <table>
           <thead>
-            <tr style="background: #f7fafc;">
-              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Kimyasal Adı</th>
-              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Mevcut Miktar</th>
-              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Asgari Seviye</th>
-              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Eksik Miktar</th>
+            <tr>
+              <th>Kimyasal Adı</th>
+              <th>Mevcut Miktar</th>
+              <th>Asgari Seviye</th>
+              <th>Eksik Miktar</th>
             </tr>
           </thead>
           <tbody>
             <% stokUyari.forEach(stok => { %>
-              <tr style="transition: background 0.2s;" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='transparent'">
-                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= stok.kimyasal_adi %></td>
-                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #dc2626; font-weight: 600;"><%= stok.mevcut_miktar %></td>
-                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= stok.asgari_seviye %></td>
-                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #dc2626; font-weight: 600;"><%= stok.eksik_miktar %></td>
+              <tr>
+                <td><%= stok.kimyasal_adi %></td>
+                <td style="color: var(--error-600); font-weight: 600;"><%= stok.mevcut_miktar %></td>
+                <td><%= stok.asgari_seviye %></td>
+                <td style="color: var(--error-600); font-weight: 600;"><%= stok.eksik_miktar %></td>
               </tr>
             <% }) %>
           </tbody>
@@ -179,28 +104,28 @@
       </div>
     <% } %>
     
-    <div style="background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
-      <h3 style="margin-bottom: 16px; color: #1a202c; font-size: 18px; font-weight: 600;">Öncelikli Siparişler (Termin Tarihine Göre)</h3>
-      <table style="width: 100%; border-collapse: collapse;">
+    <div class="content-card">
+      <h2>Öncelikli Siparişler (Termin Tarihine Göre)</h2>
+      <table>
         <thead>
-          <tr style="background: #f7fafc;">
-            <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Sipariş ID</th>
-            <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Müşteri</th>
-            <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Ürün</th>
-            <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Durum</th>
-            <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Termin Tarihi</th>
-            <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 14px;">Kalan Gün</th>
+          <tr>
+            <th>Sipariş ID</th>
+            <th>Müşteri</th>
+            <th>Ürün</th>
+            <th>Durum</th>
+            <th>Termin Tarihi</th>
+            <th>Kalan Gün</th>
           </tr>
         </thead>
         <tbody>
           <% aktifSiparisler.forEach(siparis => { %>
-            <tr style="transition: background 0.2s;" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='transparent'">
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748; font-weight: 500;">#<%= siparis.id %></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= siparis.musteri_adi %></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= siparis.urun_adi %></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= siparis.durum %></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= new Date(siparis.teslim_tarihi).toLocaleDateString('tr-TR') %></td>
-              <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; <%= siparis.kalan_gun < 0 ? 'color: #dc2626; font-weight: 600;' : siparis.kalan_gun <= 3 ? 'color: #f59e0b; font-weight: 600;' : 'color: #2d3748;' %>">
+            <tr>
+              <td style="font-weight: 500;">#<%= siparis.id %></td>
+              <td><%= siparis.musteri_adi %></td>
+              <td><%= siparis.urun_adi %></td>
+              <td><%= siparis.durum %></td>
+              <td><%= new Date(siparis.teslim_tarihi).toLocaleDateString('tr-TR') %></td>
+              <td style="<%= siparis.kalan_gun < 0 ? 'color: var(--error-600); font-weight: 600;' : siparis.kalan_gun <= 3 ? 'color: var(--warning-600); font-weight: 600;' : '' %>">
                 <%= siparis.kalan_gun %> gün
               </td>
             </tr>

@@ -24,6 +24,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+app.use(express.static('public'));
 app.use(session({
   secret: 'simya-erp-secret-key-2024',
   resave: false,
@@ -434,28 +435,13 @@ app.post('/admin/stok-yenile', authMiddleware, adminMiddleware, async (req, res)
     const { kimyasal_id, giris_miktar } = req.body;
     console.log('Stok Yenile Request:', { kimyasal_id, giris_miktar });
     
+    // Trigger (stok_ekle_trigger) otomatik olarak kimyasalstok tablosunu güncelliyor
+    // Bu yüzden sadece kimyasalstokgiris'e INSERT yapmak yeterli
     await db.query(
       'INSERT INTO kimyasalstokgiris (KimyasalID, Miktar, GirisTarihi, BirimMaliyet) VALUES (?, ?, CURDATE(), 0)',
       [kimyasal_id, giris_miktar]
     );
-    console.log('kimyasalstokgiris INSERT başarılı');
-    
-    const [existingStock] = await db.query(
-      'SELECT KimyasalID FROM kimyasalstok WHERE KimyasalID = ?',
-      [kimyasal_id]
-    );
-    
-    if (existingStock.length > 0) {
-      await db.query(
-        'UPDATE kimyasalstok SET MevcutMiktar = MevcutMiktar + ? WHERE KimyasalID = ?',
-        [giris_miktar, kimyasal_id]
-      );
-    } else {
-      await db.query(
-        'INSERT INTO kimyasalstok (KimyasalID, MevcutMiktar) VALUES (?, ?)',
-        [kimyasal_id, giris_miktar]
-      );
-    }
+    console.log('kimyasalstokgiris INSERT başarılı - trigger stoku güncelledi');
     
     const [kimyasallar] = await db.query(`
       SELECT 
@@ -659,6 +645,109 @@ app.get('/admin/operator-sureleri', authMiddleware, adminMiddleware, async (req,
       operatorOzet: [],
       banyoSureleri: [],
       banyoOrtalama: []
+    });
+  }
+});
+
+// Bildirimler Sayfası
+app.get('/admin/bildirimler', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const [bildirimler] = await db.query(
+      'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+    );
+    res.render('admin/bildirimler', {
+      username: req.session.username,
+      bildirimler,
+      success: null,
+      error: null
+    });
+  } catch (error) {
+    console.error('Bildirimler Hatası:', error);
+    res.render('admin/bildirimler', {
+      username: req.session.username,
+      bildirimler: [],
+      success: null,
+      error: 'Bildirimler yüklenirken hata oluştu!'
+    });
+  }
+});
+
+// Bildirim Ekleme
+app.post('/admin/bildirimler/ekle', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { mesaj } = req.body;
+    
+    if (!mesaj || mesaj.trim() === '') {
+      const [bildirimler] = await db.query(
+        'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+      );
+      return res.render('admin/bildirimler', {
+        username: req.session.username,
+        bildirimler,
+        success: null,
+        error: 'Lütfen bir mesaj giriniz!'
+      });
+    }
+    
+    await db.query(
+      'INSERT INTO bildirimler (Mesaj) VALUES (?)',
+      [mesaj.trim()]
+    );
+    
+    const [bildirimler] = await db.query(
+      'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+    );
+    
+    res.render('admin/bildirimler', {
+      username: req.session.username,
+      bildirimler,
+      success: 'Bildirim başarıyla eklendi!',
+      error: null
+    });
+  } catch (error) {
+    console.error('Bildirim Ekleme Hatası:', error);
+    const [bildirimler] = await db.query(
+      'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+    );
+    res.render('admin/bildirimler', {
+      username: req.session.username,
+      bildirimler,
+      success: null,
+      error: 'Bildirim eklenirken hata oluştu!'
+    });
+  }
+});
+
+// Bildirim Silme
+app.post('/admin/bildirimler/sil/:id', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.query(
+      'UPDATE bildirimler SET Aktif = FALSE WHERE BildirimID = ?',
+      [id]
+    );
+    
+    const [bildirimler] = await db.query(
+      'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+    );
+    
+    res.render('admin/bildirimler', {
+      username: req.session.username,
+      bildirimler,
+      success: 'Bildirim başarıyla kaldırıldı!',
+      error: null
+    });
+  } catch (error) {
+    console.error('Bildirim Silme Hatası:', error);
+    const [bildirimler] = await db.query(
+      'SELECT * FROM bildirimler WHERE Aktif = TRUE ORDER BY OlusturmaTarihi DESC'
+    );
+    res.render('admin/bildirimler', {
+      username: req.session.username,
+      bildirimler,
+      success: null,
+      error: 'Bildirim kaldırılırken hata oluştu!'
     });
   }
 });
