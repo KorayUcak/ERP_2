@@ -52,6 +52,91 @@ const personelMiddleware = (req, res, next) => {
   next();
 };
 
+// Kimyasal Tüketim Raporu
+app.get('/admin/kimyasal-tuketim', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { start, end, operator_id, kimyasal_id } = req.query;
+
+    const [operators] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
+    const [chemicals] = await db.query('SELECT KimyasalID, KimyasalAdi FROM kimyasallar ORDER BY KimyasalAdi');
+
+    const where = [];
+    const params = [];
+
+    if (start) {
+      where.push('kt.TuketimTarihi >= ?');
+      params.push(`${start} 00:00:00`);
+    }
+
+    if (end) {
+      where.push('kt.TuketimTarihi <= ?');
+      params.push(`${end} 23:59:59`);
+    }
+
+    if (operator_id) {
+      where.push('kt.OperatorID = ?');
+      params.push(operator_id);
+    }
+
+    if (kimyasal_id) {
+      where.push('kt.KimyasalID = ?');
+      params.push(kimyasal_id);
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const [records] = await db.query(
+      `SELECT 
+        kt.TuketimID,
+        kt.TuketimTarihi,
+        kt.TuketilenMiktar,
+        o.AdSoyad as OperatorAdi,
+        k.KimyasalAdi,
+        k.Birim
+      FROM kimyasaltuketim kt
+      LEFT JOIN operatorler o ON kt.OperatorID = o.OperatorID
+      LEFT JOIN kimyasallar k ON kt.KimyasalID = k.KimyasalID
+      ${whereSql}
+      ORDER BY kt.TuketimTarihi DESC
+      LIMIT 500`,
+      params
+    );
+
+    const [[ozet]] = await db.query(
+      `SELECT 
+        COUNT(*) as toplam_kayit,
+        COALESCE(SUM(kt.TuketilenMiktar), 0) as toplam_tuketim
+      FROM kimyasaltuketim kt
+      ${whereSql}`,
+      params
+    );
+
+    res.render('admin/kimyasal-tuketim', {
+      username: req.session.username,
+      operators,
+      chemicals,
+      records,
+      ozet: ozet || { toplam_kayit: 0, toplam_tuketim: 0 },
+      filters: {
+        start: start || '',
+        end: end || '',
+        operator_id: operator_id || '',
+        kimyasal_id: kimyasal_id || ''
+      }
+    });
+  } catch (error) {
+    console.error('Kimyasal Tüketim Raporu Hatası:', error);
+    res.render('admin/kimyasal-tuketim', {
+      username: req.session.username,
+      operators: [],
+      chemicals: [],
+      records: [],
+      ozet: { toplam_kayit: 0, toplam_tuketim: 0 },
+      filters: { start: '', end: '', operator_id: '', kimyasal_id: '' }
+    });
+  }
+});
+
 const personelRoutes = require('./routes/personel')(db);
 app.use('/personel', personelRoutes);
 

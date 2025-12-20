@@ -9,22 +9,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #1A1D21; color: #E8E9EB; }
-    .navbar { background: linear-gradient(180deg, #2D3339 0%, #252A2E 100%); color: #E8E9EB; padding: 16px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-bottom: 1px solid #3D444D; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f7fafc; color: #1a202c; }
+    .navbar { background: #ffffff; color: #2d3748; padding: 16px 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-bottom: 1px solid #e2e8f0; }
     .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .navbar-header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    .navbar-header h1 { font-size: 20px; font-weight: 700; color: #1a202c; }
     .navbar-right { display: flex; align-items: center; gap: 20px; }
-    .user-info { font-size: 13px; color: #8A9199; }
-    .logout-btn { background: transparent; color: #B0B7BF; border: 1px solid #3D444D; padding: 8px 20px; border-radius: 3px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .logout-btn:hover { background: rgba(74,111,165,0.1); border-color: #4A6FA5; color: #E8E9EB; }
-    .navbar-menu { display: flex; gap: 4px; flex-wrap: wrap; }
-    .navbar-menu a { color: #8A9199; text-decoration: none; padding: 10px 16px; border-radius: 3px; transition: all 200ms ease; font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-    .navbar-menu a:hover { background: rgba(74,111,165,0.15); color: #E8E9EB; }
-    .navbar-menu a.active { background: rgba(74,111,165,0.2); color: #4A6FA5; }
-    .container { max-width: 1200px; margin: 32px auto; padding: 0 24px; }
-    .content-card { background: linear-gradient(165deg, #2D3339 0%, #252A2E 100%); padding: 40px; border-radius: 4px; border: 1px solid #3D444D; }
-    .content-card h2 { color: #E8E9EB; font-size: 24px; font-weight: 700; margin-bottom: 24px; border-bottom: 1px solid #3D444D; padding-bottom: 12px; }
-    .content-card p { color: #8A9199; font-size: 15px; line-height: 1.6; }
+    .user-info { font-size: 13px; color: #718096; }
+    .logout-btn { background: #ffffff; color: #4a5568; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; font-weight: 500; }
+    .logout-btn:hover { background: #f7fafc; border-color: #cbd5e0; transform: translateY(-1px); }
+    .navbar-menu { display: flex; gap: 8px; flex-wrap: wrap; }
+    .navbar-menu a { color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; transition: all 200ms ease; font-size: 14px; font-weight: 500; }
+    .navbar-menu a:hover { background: #edf2f7; color: #1a202c; }
+    .navbar-menu a.active { background: #edf2f7; color: #1a202c; font-weight: 600; }
+    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+    .content-card { background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .content-card h2 { color: #1a202c; font-size: 24px; font-weight: 700; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
+    .content-card p { color: #718096; font-size: 15px; line-height: 1.6; }
   </style>
 </head>
 <body>

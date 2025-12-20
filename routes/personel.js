@@ -723,34 +723,51 @@ module.exports = (db) => {
     try {
       const { operator_id, kimyasal_id, tuketim_miktar } = req.body;
       
-      const [[stok]] = await db.query(
-        'SELECT MevcutMiktar FROM kimyasalstok WHERE KimyasalID = ?',
-        [kimyasal_id]
-      );
+      const connection = await db.getConnection();
       
-      if (!stok || stok.MevcutMiktar < parseFloat(tuketim_miktar)) {
-        const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
-        const [kimyasallar] = await db.query(`
-          SELECT k.KimyasalID, k.KimyasalAdi, k.Birim, ks.MevcutMiktar as StokMiktar
-          FROM kimyasallar k
-          LEFT JOIN kimyasalstok ks ON k.KimyasalID = ks.KimyasalID
-          ORDER BY k.KimyasalAdi
-        `);
-        return res.render('personel/kimyasal-tuketim', { 
-          username: req.session.username, 
-          operators: operatorler, 
-          chemicals: kimyasallar, 
-          success: null, 
-          error: 'Yetersiz stok!' 
-        });
+      try {
+        await connection.beginTransaction();
+        
+        const [[stok]] = await connection.query(
+          'SELECT MevcutMiktar FROM kimyasalstok WHERE KimyasalID = ? FOR UPDATE',
+          [kimyasal_id]
+        );
+      
+        const miktar = parseFloat(tuketim_miktar);
+        
+        if (!stok || stok.MevcutMiktar < miktar) {
+          await connection.rollback();
+          const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');
+          const [kimyasallar] = await db.query(`
+            SELECT k.KimyasalID, k.KimyasalAdi, k.Birim, ks.MevcutMiktar as StokMiktar
+            FROM kimyasallar k
+            LEFT JOIN kimyasalstok ks ON k.KimyasalID = ks.KimyasalID
+            ORDER BY k.KimyasalAdi
+          `);
+          return res.render('personel/kimyasal-tuketim', { 
+            username: req.session.username, 
+            operators: operatorler, 
+            chemicals: kimyasallar, 
+            success: null, 
+            error: 'Yetersiz stok!' 
+          });
+        }
+        
+        await connection.query(
+          'UPDATE kimyasalstok SET MevcutMiktar = MevcutMiktar - ? WHERE KimyasalID = ?',
+          [miktar, kimyasal_id]
+        );
+        
+        await connection.query(
+          'INSERT INTO kimyasaltuketim (KimyasalID, OperatorID, TuketimTarihi, TuketilenMiktar) VALUES (?, ?, NOW(), ?)',
+          [kimyasal_id, operator_id, miktar]
+        );
+        
+        await connection.commit();
+        res.redirect('/personel?success=1');
+      } finally {
+        connection.release();
       }
-      
-      await db.query(
-        'UPDATE kimyasalstok SET MevcutMiktar = MevcutMiktar - ? WHERE KimyasalID = ?',
-        [tuketim_miktar, kimyasal_id]
-      );
-      
-      res.redirect('/personel?success=1');
     } catch (error) {
       console.error('Kimyasal Tüketim POST Hatası:', error);
       const [operatorler] = await db.query('SELECT OperatorID, AdSoyad FROM operatorler ORDER BY AdSoyad');

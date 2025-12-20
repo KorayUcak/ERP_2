@@ -9,23 +9,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #1A1D21; color: #E8E9EB; }
-    .navbar { background: linear-gradient(180deg, #2D3339 0%, #252A2E 100%); color: #E8E9EB; padding: 16px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-bottom: 1px solid #3D444D; }
-    .navbar h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f7fafc; color: #1a202c; }
+    .navbar { background: #ffffff; color: #2d3748; padding: 16px 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-bottom: 1px solid #e2e8f0; }
+    .navbar h1 { font-size: 20px; font-weight: 700; color: #1a202c; }
     .navbar-right { display: flex; align-items: center; gap: 20px; }
-    .user-info { font-size: 13px; color: #8A9199; }
-    .logout-btn { background: transparent; color: #B0B7BF; border: 1px solid #3D444D; padding: 8px 20px; border-radius: 3px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .logout-btn:hover { background: rgba(74,111,165,0.1); border-color: #4A6FA5; color: #E8E9EB; }
+    .user-info { font-size: 13px; color: #718096; }
+    .logout-btn { background: #ffffff; color: #4a5568; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; font-weight: 500; }
+    .logout-btn:hover { background: #f7fafc; border-color: #cbd5e0; transform: translateY(-1px); }
     .container { max-width: 1200px; margin: 32px auto; padding: 0 24px; }
-    .content-card { background: linear-gradient(165deg, #2D3339 0%, #252A2E 100%); padding: 40px; border-radius: 4px; border: 1px solid #3D444D; }
-    .content-card h2 { color: #E8E9EB; font-size: 24px; margin-bottom: 24px; }
-    input, select { background: #1A1D21; color: #E8E9EB; border: 1px solid #3D444D; padding: 10px; border-radius: 3px; font-family: 'Inter', sans-serif; }
-    input:focus, select:focus { outline: none; border-color: #4A6FA5; box-shadow: 0 0 0 3px rgba(74,111,165,0.15); }
-    button { background: linear-gradient(135deg, #4A6FA5 0%, #3D5A80 100%); color: #E8E9EB; border: none; padding: 12px 30px; border-radius: 3px; cursor: pointer; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; transition: all 200ms ease; }
-    button:hover { background: linear-gradient(135deg, #5A7FB5 0%, #4A6A90 100%); box-shadow: 0 4px 12px rgba(74,111,165,0.3); }
+    .content-card { background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .content-card h2 { color: #1a202c; font-size: 24px; margin-bottom: 24px; font-weight: 600; }
+    input, select { background: #ffffff; color: #1a202c; border: 2px solid #e2e8f0; padding: 12px 16px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 14px; transition: all 200ms ease; }
+    input:focus, select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.1); }
+    button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all 200ms ease; }
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102,126,234,0.3); }
     table { width: 100%; border-collapse: collapse; }
-    th { background: rgba(26,29,33,0.5); color: #8A9199; padding: 12px; text-align: left; border-bottom: 1px solid #3D444D; font-size: 11px; text-transform: uppercase; }
-    td { padding: 12px; border-bottom: 1px solid #2D3339; color: #B0B7BF; font-size: 14px; }
+    th { background: #f7fafc; color: #4a5568; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; font-size: 13px; text-transform: uppercase; font-weight: 600; }
+    td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -33,7 +33,7 @@
     <h1>Simya ERP - Stok Yenileme</h1>
     <div class="navbar-right">
       <span class="user-info">Hoş geldiniz, <%= username %></span>
-      <a href="/admin" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 20px; border-radius: 5px; text-decoration: none; margin-right: 10px;">Dashboard'a Dön</a>
+      <a href="/admin" style="background: #ffffff; color: #4a5568; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 8px; text-decoration: none; margin-right: 10px; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='#ffffff'">Dashboard'a Dön</a>
       <a href="/logout" class="logout-btn">Çıkış Yap</a>
     </div>
   </nav>
@@ -43,21 +43,21 @@
       <h2>Kimyasal Stok Yenileme</h2>
       
       <% if (success) { %>
-        <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+        <div style="background: #d1fae5; color: #065f46; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #a7f3d0; font-weight: 500;">
           <%= success %>
         </div>
       <% } %>
       
       <% if (error) { %>
-        <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+        <div style="background: #fee2e2; color: #991b1b; padding: 14px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca; font-weight: 500;">
           <%= error %>
         </div>
       <% } %>
       
       <form action="/admin/stok-yenile" method="POST">
         <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Kimyasal Seçin:</label>
-          <select name="kimyasal_id" id="kimyasalSelect" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748; font-size: 14px;">Kimyasal Seçin:</label>
+          <select name="kimyasal_id" id="kimyasalSelect" required style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
             <option value="">-- Kimyasal Seçin --</option>
             <% kimyasallar.forEach(kimyasal => { %>
               <option value="<%= kimyasal.id %>" data-stok="<%= kimyasal.stok_miktar || 0 %>" data-birim="<%= kimyasal.birim %>">
@@ -67,30 +67,30 @@
           </select>
         </div>
         
-        <div id="stokBilgi" style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin-bottom: 20px; display: none; border: 1px solid #007bff;">
-          <h3 style="margin-bottom: 10px; font-size: 18px; color: #004085;">Mevcut Stok Bilgisi</h3>
-          <p style="font-size: 24px; font-weight: bold; color: #004085;" id="stokMiktar">0</p>
+        <div id="stokBilgi" style="background: #dbeafe; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid #bfdbfe;">
+          <h3 style="margin-bottom: 10px; font-size: 16px; color: #1e40af; font-weight: 600;">Mevcut Stok Bilgisi</h3>
+          <p style="font-size: 24px; font-weight: bold; color: #1e40af;" id="stokMiktar">0</p>
         </div>
         
         <div style="margin-bottom: 20px;">
-          <label style="display: block; margin-bottom: 5px; font-weight: 500;">Giriş Miktarı:</label>
-          <input type="number" name="giris_miktar" step="0.01" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2d3748; font-size: 14px;">Giriş Miktarı:</label>
+          <input type="number" name="giris_miktar" step="0.01" required style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
         </div>
         
-        <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; font-size: 16px;">
+        <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 14px 32px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 25px rgba(102,126,234,0.3)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
           Stok Girişi Yap
         </button>
       </form>
       
       <div style="margin-top: 40px;">
-        <h3 style="margin-bottom: 15px; color: #333;">Kimyasal Stok Listesi</h3>
+        <h3 style="margin-bottom: 16px; color: #1a202c; font-size: 18px; font-weight: 600;">Kimyasal Stok Listesi</h3>
         <table style="width: 100%; border-collapse: collapse;">
           <thead>
-            <tr style="background: #f8f9fa;">
-              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Kimyasal Adı</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Mevcut Stok</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Asgari Stok Seviyesi</th>
-              <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Birim</th>
+            <tr style="background: #f7fafc;">
+              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 13px;">Kimyasal Adı</th>
+              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 13px;">Mevcut Stok</th>
+              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 13px;">Asgari Stok Seviyesi</th>
+              <th style="padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; color: #4a5568; font-weight: 600; font-size: 13px;">Birim</th>
             </tr>
           </thead>
           <tbody>
@@ -99,10 +99,10 @@
               const asgariSeviye = Number(kimyasal.asgari_seviye) || 0;
             %>
               <tr>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.kimyasal_adi %></td>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6; font-weight: bold; font-size: 16px;<% if (mevcutStok < asgariSeviye) { %> color: #dc3545; background-color: #f8d7da;<% } else { %> color: #28a745; background-color: #d4edda;<% } %>"><%= mevcutStok %></td>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= asgariSeviye %></td>
-                <td style="padding: 12px; border-bottom: 1px solid #dee2e6;"><%= kimyasal.birim %></td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= kimyasal.kimyasal_adi %></td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-weight: 600; font-size: 16px;<% if (mevcutStok < asgariSeviye) { %> color: #dc2626; background-color: #fee2e2;<% } else { %> color: #059669; background-color: #d1fae5;<% } %>"><%= mevcutStok %></td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= asgariSeviye %></td>
+                <td style="padding: 12px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748;"><%= kimyasal.birim %></td>
               </tr>
             <% }) %>
           </tbody>
