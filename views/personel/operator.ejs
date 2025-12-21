@@ -9,23 +9,54 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/enterprise-style.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f7fafc; color: #1a202c; }
-    .navbar { background: #ffffff; color: #2d3748; padding: 16px 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-bottom: 1px solid #e2e8f0; }
-    .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .navbar-header h1 { font-size: 20px; font-weight: 700; color: #1a202c; }
-    .navbar-right { display: flex; align-items: center; gap: 20px; }
-    .user-info { font-size: 13px; color: #718096; }
-    .logout-btn { background: #ffffff; color: #4a5568; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; font-weight: 500; }
-    .logout-btn:hover { background: #f7fafc; border-color: #cbd5e0; transform: translateY(-1px); }
-    .navbar-menu { display: flex; gap: 8px; flex-wrap: wrap; }
-    .navbar-menu a { color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; transition: all 200ms ease; font-size: 14px; font-weight: 500; }
-    .navbar-menu a:hover { background: #edf2f7; color: #1a202c; }
-    .navbar-menu a.active { background: #edf2f7; color: #1a202c; font-weight: 600; }
-    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
-    .content-card { background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .content-card h2 { color: #1a202c; font-size: 24px; font-weight: 700; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
-    .content-card p { color: #718096; font-size: 15px; line-height: 1.6; }
+    .adim-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid rgba(102, 126, 234, 0.2);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInUp 0.5s ease;
+    }
+    
+    .adim-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(102, 126, 234, 0.2);
+      border-color: rgba(102, 126, 234, 0.4);
+    }
+    
+    .adim-timer {
+      font-size: 42px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+      margin: 20px 0;
+      text-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .talimat-box {
+      background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 152, 0, 0.15));
+      border-left: 5px solid #ffc107;
+      padding: 20px;
+      margin-bottom: 24px;
+      border-radius: 12px;
+      border: 2px solid rgba(255, 193, 7, 0.3);
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.2);
+      animation: slideInRight 0.4s ease;
+    }
+    
+    .kalite-gonder-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.15));
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      border: 2px solid #10B981;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.2);
+      animation: scaleIn 0.5s ease;
+    }
   </style>
 </head>
 <body>
@@ -54,13 +85,13 @@
       <h2>Operatör Ekranı</h2>
       
       <% if (success) { %>
-        <div style="background: #d4edda; color: #155724; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+        <div class="alert-success">
           <%= success %>
         </div>
       <% } %>
       
       <% if (error) { %>
-        <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+        <div class="alert-error">
           <%= error %>
         </div>
       <% } %>
@@ -107,9 +138,9 @@
             </div>
           </div>
           
-          <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
-            <strong style="color: #856404;">⚠️ Talimat:</strong>
-            <p style="color: #856404; margin-top: 5px;">Aşağıdaki adımları sırasıyla uygulamanız gerekmektedir. Her adımı tamamlamadan diğerine geçemezsiniz.</p>
+          <div class="talimat-box">
+            <strong style="color: #856404; font-size: 16px;">⚠️ Talimat:</strong>
+            <p style="color: #856404; margin-top: 8px; font-weight: 500;">Aşağıdaki adımları sırasıyla uygulamanız gerekmektedir. Her adımı tamamlamadan diğerine geçemezsiniz.</p>
           </div>
           
           <div id="adimsContainer" style="margin-bottom: 20px;">
@@ -117,9 +148,9 @@
             <div id="adimlarListesi"></div>
           </div>
           
-          <div id="kaliteyeGonderContainer" style="display: none; text-align: center; padding: 30px; background: #d4edda; border-radius: 10px;">
-            <h3 style="color: #155724; margin-bottom: 15px;">✅ Tüm Adımlar Tamamlandı!</h3>
-            <button onclick="islemiBitir()" style="background: #28a745; color: white; border: none; padding: 15px 40px; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: 600;">
+          <div id="kaliteyeGonderContainer" class="kalite-gonder-box" style="display: none;">
+            <h3 style="color: #059669; margin-bottom: 20px; font-size: 24px; font-weight: 700;">✅ Tüm Adımlar Tamamlandı!</h3>
+            <button onclick="islemiBitir()" class="btn-primary" style="padding: 18px 48px; font-size: 18px;">
               İŞLEMİ BİTİR VE KALİTEYE GÖNDER
             </button>
           </div>
@@ -190,7 +221,7 @@
         const sureInfo = (sureMin > 0 || sureMax > 0) ? `(Min: ${sureMin} dk, Max: ${sureMax} dk)` : '';
         
         html += `
-          <div id="adim_${plan.PlanID}" style="background: white; border: 2px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 15px;" data-suremin="${sureMin}" data-suremax="${sureMax}">
+          <div id="adim_${plan.PlanID}" class="adim-card" data-suremin="${sureMin}" data-suremax="${sureMax}">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
               <div>
                 <h4 style="font-size: 18px; color: #333; margin-bottom: 5px;">
@@ -209,7 +240,7 @@
               </span>
             </div>
             
-            <div id="timer_${plan.PlanID}" style="font-size: 32px; font-weight: bold; color: #667eea; text-align: center; margin: 15px 0; display: none;">
+            <div id="timer_${plan.PlanID}" class="adim-timer" style="display: none;">
               00:00:00
             </div>
             

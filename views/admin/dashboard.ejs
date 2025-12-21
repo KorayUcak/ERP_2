@@ -25,6 +25,7 @@
       <a href="/admin/operator-sureleri">Operatör Süreleri</a>
       <a href="/admin/kimyasal-tuketim">Kimyasal Tüketim</a>
       <a href="/admin/bildirimler">Personel Bildirimleri</a>
+      <a href="/admin/sevkiyat-tamamlananlar">Sevkiyatı Tamamlananlar</a>
     </div>
   </nav>
   
@@ -115,6 +116,7 @@
             <th>Durum</th>
             <th>Termin Tarihi</th>
             <th>Kalan Gün</th>
+            <th>İşlem</th>
           </tr>
         </thead>
         <tbody>
@@ -128,11 +130,43 @@
               <td style="<%= siparis.kalan_gun < 0 ? 'color: var(--error-600); font-weight: 600;' : siparis.kalan_gun <= 3 ? 'color: var(--warning-600); font-weight: 600;' : '' %>">
                 <%= siparis.kalan_gun %> gün
               </td>
+              <td>
+                <button onclick="sevkiyatTamamla(<%= siparis.id %>)" class="btn-small" style="background: #10b981; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;">
+                  ✓ Sevkiyatı Tamamla
+                </button>
+              </td>
             </tr>
           <% }) %>
         </tbody>
       </table>
     </div>
   </div>
+
+  <script>
+    function sevkiyatTamamla(siparisDetayID) {
+      if (confirm('Bu siparişin sevkiyatını onaylıyor musunuz?')) {
+        fetch('/admin/sevkiyat-tamamla', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ siparisDetayID: siparisDetayID })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Sevkiyat başarıyla tamamlandı!');
+            location.reload();
+          } else {
+            alert('Hata: ' + (data.error || 'Bir hata oluştu'));
+          }
+        })
+        .catch(error => {
+          console.error('Hata:', error);
+          alert('Bir hata oluştu!');
+        });
+      }
+    }
+  </script>
 </body>
 </html>

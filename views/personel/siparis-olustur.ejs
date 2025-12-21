@@ -9,194 +9,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/enterprise-style.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #f7fafc;
-      color: #1a202c;
-    }
-    
-    .navbar {
-      background: #ffffff;
-      color: #2d3748;
-      padding: 16px 32px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .navbar h1 {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1a202c;
-    }
-    
-    .navbar-right {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    
-    .user-info {
-      font-size: 13px;
-      color: #718096;
-    }
-    
-    .btn {
-      background: #ffffff;
-      color: #4a5568;
-      border: 1px solid #e2e8f0;
-      padding: 8px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 200ms ease;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    
-    .btn:hover {
-      background: #f7fafc;
-      border-color: #cbd5e0;
-      transform: translateY(-1px);
-    }
-    
-    .container {
-      max-width: 900px;
-      margin: 40px auto;
-      padding: 0 24px;
-    }
-    
-    .content-card {
-      background: #ffffff;
-      padding: 40px;
-      border-radius: 12px;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    
-    .content-card h2 {
-      color: #1a202c;
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 32px;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 12px;
-    }
-    
-    .alert {
-      padding: 14px 16px;
-      border-radius: 3px;
-      margin-bottom: 24px;
-      font-weight: 500;
-      border-left: 3px solid;
-    }
-    
-    .alert-success {
-      background: #d1fae5;
-      color: #065f46;
-      border-color: #a7f3d0;
-    }
-    
-    .alert-error {
-      background: #fee2e2;
-      color: #991b1b;
-      border-color: #fecaca;
-    }
-    
-    .form-group {
-      margin-bottom: 24px;
-    }
-    
-    .form-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: #2d3748;
-      font-size: 14px;
-    }
-    
-    .form-group label .required {
-      color: #dc2626;
-      margin-left: 3px;
-    }
-    
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 12px 16px;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      transition: all 200ms ease;
-      background: #ffffff;
-      color: #1a202c;
-    }
-    
-    .form-group input[type="file"] {
-      padding: 10px;
-      background: #ffffff;
-    }
-    
-    .form-group input:focus,
-    .form-group select:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
-    }
-    
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
     }
     
-    .submit-btn {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: #ffffff;
-      border: none;
-      padding: 14px 40px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: 600;
-      transition: all 200ms ease;
-      width: 100%;
-      margin-top: 16px;
-      font-family: 'Inter', sans-serif;
-    }
-    
-    .submit-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102,126,234,0.3);
-    }
-    
-    .submit-btn:active {
-      transform: translateY(0);
-    }
-    
     .form-info {
-      background: #dbeafe;
-      padding: 14px 16px;
-      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.15));
+      padding: 16px 20px;
+      border-radius: 12px;
       margin-bottom: 24px;
-      border-left: 4px solid #3b82f6;
-      border: 1px solid #bfdbfe;
+      border: 2px solid #3b82f6;
+      border-left: 5px solid #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+      animation: slideInRight 0.4s ease;
     }
     
     .form-info p {
       margin: 0;
       color: #1e40af;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
     }
     
     .file-info {
@@ -204,15 +38,32 @@
       color: #718096;
       margin-top: 6px;
     }
+    
+    .required {
+      color: #dc2626;
+      margin-left: 3px;
+    }
   </style>
 </head>
 <body>
   <nav class="navbar">
-    <h1>Simya ERP - Sipariş Oluştur</h1>
-    <div class="navbar-right">
-      <span class="user-info">Hoş geldiniz, <%= username %></span>
-      <a href="/personel" class="btn">Dashboard'a Dön</a>
-      <a href="/logout" class="btn">Çıkış Yap</a>
+    <div class="navbar-header">
+      <h1>Simya ERP - Personel Paneli</h1>
+      <div class="navbar-right">
+        <span class="user-info">Hoş geldiniz, <%= username %></span>
+        <a href="/logout" class="logout-btn">Çıkış Yap</a>
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <a href="/personel">Ana Sayfa</a>
+      <a href="/personel/siparis-olustur" class="active">Sipariş Oluşturma</a>
+      <a href="/personel/mal-kabul">Mal Kabul</a>
+      <a href="/personel/giris-kalite">Giriş Kalite</a>
+      <a href="/personel/uretim-planlama">Üretim Planlama</a>
+      <a href="/personel/operator">Operatör</a>
+      <a href="/personel/cikis-kalite">Çıkış Kalite</a>
+      <a href="/personel/iade-yonetimi">İade Yönetimi</a>
+      <a href="/personel/kimyasal-tuketim">Kimyasal Tüketim</a>
     </div>
   </nav>
   
@@ -221,13 +72,13 @@
       <h2>Yeni Sipariş Oluştur</h2>
       
       <% if (success) { %>
-        <div class="alert alert-success">
+        <div class="alert-success">
           <%= success %>
         </div>
       <% } %>
       
       <% if (error) { %>
-        <div class="alert alert-error">
+        <div class="alert-error">
           <%= error %>
         </div>
       <% } %>
@@ -299,7 +150,7 @@
           </div>
         </div>
         
-        <button type="submit" class="submit-btn">Sipariş Oluştur</button>
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 16px;">Sipariş Oluştur</button>
       </form>
     </div>
   </div>

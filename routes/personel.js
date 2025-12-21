@@ -575,11 +575,14 @@ module.exports = (db) => {
         ORDER BY s.SiparisKodu DESC
       `);
       
+      const [operatorler] = await db.query('SELECT OperatorID, AdSoyad as OperatorAdi FROM operatorler ORDER BY AdSoyad ASC');
+      
       console.log('Çıkış Kalite PendingQc:', JSON.stringify(pendingQc, null, 2));
       
       res.render('personel/cikis-kalite', { 
         username: req.session.username, 
         pendingQc,
+        operatorler,
         success: null, 
         error: null 
       });
@@ -588,16 +591,18 @@ module.exports = (db) => {
       res.render('personel/cikis-kalite', { 
         username: req.session.username, 
         pendingQc: [],
+        operatorler: [],
         success: null, 
-        error: 'Veri yüklenirken hata oluştu!' 
+        error: 'Sayfa yüklenirken hata oluştu!' 
       });
     }
   });
 
   router.post('/cikis-kalite-kaydet', authMiddleware, personelMiddleware, async (req, res) => {
     try {
-      const { siparis_detay_id, toplam_miktar, uygunsuz_miktar, durum, hata_kodu, aciklama } = req.body;
+      const { siparis_detay_id, operator_id, toplam_miktar, uygunsuz_miktar, durum, hata_kodu, aciklama } = req.body;
       
+      const operatorIdValue = operator_id ? parseInt(operator_id) : null;
       const toplamMiktarValue = toplam_miktar ? parseInt(toplam_miktar) : 0;
       const uygunsuzMiktarValue = uygunsuz_miktar ? parseInt(uygunsuz_miktar) : 0;
       const hataVarMi = durum === 'hata' ? 1 : 0;
@@ -609,11 +614,11 @@ module.exports = (db) => {
         [siparis_detay_id, hataVarMi, hataKoduFinal, aciklamaFinal]
       );
       
-      // İşlem adım kaydı oluştur
+      // İşlem adım kaydı oluştur (Operatör bilgisi ile)
       await db.query(
         `INSERT INTO islem_adim_kayitlari (SiparisDetayID, AdimKodu, OperatorID, ToplamMiktar, KayipMiktar, Aciklama) 
-         VALUES (?, 'CIKIS_KALITE', NULL, ?, ?, ?)`,
-        [siparis_detay_id, toplamMiktarValue, uygunsuzMiktarValue, aciklamaFinal]
+         VALUES (?, 'CIKIS_KALITE', ?, ?, ?, ?)`,
+        [siparis_detay_id, operatorIdValue, toplamMiktarValue, uygunsuzMiktarValue, aciklamaFinal]
       );
       
       res.redirect('/personel?success=1');

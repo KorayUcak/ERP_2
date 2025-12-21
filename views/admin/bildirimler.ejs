@@ -10,20 +10,24 @@
   <link rel="stylesheet" href="/css/enterprise-style.css">
   <style>
     .notification-card {
-      background: var(--bg-surface);
-      padding: 20px;
-      border-radius: 12px;
-      border: 1px solid var(--neutral-200);
-      margin-bottom: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      border-radius: 16px;
+      border: 2px solid rgba(102, 126, 234, 0.1);
+      margin-bottom: 20px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: all 200ms ease;
+      transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: var(--shadow-md);
+      animation: fadeInUp 0.5s ease;
     }
     
     .notification-card:hover {
-      border-color: var(--primary-500);
-      box-shadow: var(--shadow-md);
+      border-color: rgba(102, 126, 234, 0.4);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
     }
     
     .notification-content {
@@ -148,6 +152,7 @@
       <a href="/admin/operator-sureleri">Operatör Süreleri</a>
       <a href="/admin/kimyasal-tuketim">Kimyasal Tüketim</a>
       <a href="/admin/bildirimler" class="active">Personel Bildirimleri</a>
+      <a href="/admin/sevkiyat-tamamlananlar">Sevkiyatı Tamamlananlar</a>
     </div>
   </nav>
   

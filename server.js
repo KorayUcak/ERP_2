@@ -215,9 +215,21 @@ app.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
     const [[stats]] = await db.query(`
       SELECT 
         (SELECT COUNT(*) FROM siparisler) as toplam_siparis,
-        (SELECT COUNT(*) FROM siparisdetay sd LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID WHERE kkc.KcCikisID IS NULL) as aktif_siparis,
+        (SELECT COUNT(DISTINCT sd.SiparisDetayID) 
+         FROM siparisdetay sd 
+         JOIN siparisler s ON sd.SiparisID = s.SiparisID
+         LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID AND iak.AdimKodu = 'MAL_KABUL'
+         LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID 
+         LEFT JOIN iadeler i ON s.SiparisID = i.SiparisID
+         WHERE kkc.KcCikisID IS NULL AND iak.KayitID IS NOT NULL AND i.IadeID IS NULL) as aktif_siparis,
         (SELECT COUNT(*) FROM siparisler WHERE TerminTarihi = CURDATE()) as bugun_termin,
-        (SELECT COUNT(*) FROM siparisler s JOIN siparisdetay sd ON s.SiparisID = sd.SiparisID LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID WHERE s.TerminTarihi < CURDATE() AND kkc.KcCikisID IS NULL) as geciken,
+        (SELECT COUNT(DISTINCT sd.SiparisDetayID) 
+         FROM siparisler s 
+         JOIN siparisdetay sd ON s.SiparisID = sd.SiparisID 
+         LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID AND iak.AdimKodu = 'MAL_KABUL'
+         LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID 
+         LEFT JOIN iadeler i ON s.SiparisID = i.SiparisID
+         WHERE s.TerminTarihi < CURDATE() AND kkc.KcCikisID IS NULL AND iak.KayitID IS NOT NULL AND i.IadeID IS NULL) as geciken,
         (SELECT COUNT(*) FROM operatorler) as toplam_operator,
         (SELECT COUNT(*) FROM hareketler WHERE BitisZamani IS NULL) as aktif_islem,
         (SELECT COUNT(*) FROM kimyasalstok ks JOIN kimyasallar k ON ks.KimyasalID = k.KimyasalID WHERE ks.MevcutMiktar < k.AsgariStokSeviyesi) as kritik_stok
@@ -243,7 +255,8 @@ app.get('/admin', authMiddleware, adminMiddleware, async (req, res) => {
       JOIN musteriler m ON s.MusteriID = m.MusteriID
       LEFT JOIN kalitekontrolcikis kkc ON sd.SiparisDetayID = kkc.SiparisDetayID
       LEFT JOIN iadeler i ON s.SiparisID = i.SiparisID
-      WHERE i.IadeID IS NULL
+      LEFT JOIN sevkiyatlar sv ON sd.SiparisDetayID = sv.SiparisDetayID
+      WHERE i.IadeID IS NULL AND sv.SevkiyatID IS NULL
       ORDER BY CASE WHEN s.TerminTarihi IS NULL THEN 1 ELSE 0 END, s.TerminTarihi ASC
       LIMIT 10
     `);
@@ -525,7 +538,7 @@ app.get('/admin/raporlar', authMiddleware, adminMiddleware, async (req, res) => 
         iak.Aciklama,
         s.SiparisKodu,
         sd.ParcaAdi,
-        o.AdSoyad as OperatorAdi
+        COALESCE(o.AdSoyad, '-') as OperatorAdi
       FROM islem_adim_kayitlari iak
       JOIN siparisdetay sd ON iak.SiparisDetayID = sd.SiparisDetayID
       JOIN siparisler s ON sd.SiparisID = s.SiparisID
@@ -748,6 +761,69 @@ app.post('/admin/bildirimler/sil/:id', authMiddleware, adminMiddleware, async (r
       bildirimler,
       success: null,
       error: 'Bildirim kaldırılırken hata oluştu!'
+    });
+  }
+});
+
+// Sevkiyat Tamamlama
+app.post('/admin/sevkiyat-tamamla', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const { siparisDetayID } = req.body;
+    
+    // Sipariş detaylarını al
+    const [[siparisDetay]] = await db.query(`
+      SELECT sd.*, s.SiparisKodu, s.SiparisID, s.MusteriID, s.TerminTarihi
+      FROM siparisdetay sd
+      JOIN siparisler s ON sd.SiparisID = s.SiparisID
+      WHERE sd.SiparisDetayID = ?
+    `, [siparisDetayID]);
+    
+    if (!siparisDetay) {
+      return res.status(404).json({ success: false, error: 'Sipariş bulunamadı' });
+    }
+    
+    // Sevkiyat tablosuna kaydet (SevkEdilenMiktar = Miktar)
+    await db.query(`
+      INSERT INTO sevkiyatlar (SiparisDetayID, SevkiyatTarihi, SevkEdilenMiktar)
+      VALUES (?, NOW(), ?)
+    `, [siparisDetayID, siparisDetay.Miktar]);
+    
+    res.json({ success: true, message: 'Sevkiyat başarıyla tamamlandı' });
+  } catch (error) {
+    console.error('Sevkiyat Tamamlama Hatası:', error);
+    res.status(500).json({ success: false, error: 'Sevkiyat tamamlanırken hata oluştu' });
+  }
+});
+
+// Sevkiyatı Tamamlananlar Sayfası
+app.get('/admin/sevkiyat-tamamlananlar', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    const [sevkiyatlar] = await db.query(`
+      SELECT 
+        sv.SevkiyatID,
+        sv.SevkiyatTarihi,
+        sd.SiparisDetayID,
+        sd.ParcaAdi,
+        sd.Miktar,
+        s.SiparisKodu,
+        s.TerminTarihi,
+        m.MusteriAdi
+      FROM sevkiyatlar sv
+      JOIN siparisdetay sd ON sv.SiparisDetayID = sd.SiparisDetayID
+      JOIN siparisler s ON sd.SiparisID = s.SiparisID
+      JOIN musteriler m ON s.MusteriID = m.MusteriID
+      ORDER BY sv.SevkiyatTarihi DESC
+    `);
+    
+    res.render('admin/sevkiyat-tamamlananlar', {
+      username: req.session.username,
+      sevkiyatlar
+    });
+  } catch (error) {
+    console.error('Sevkiyat Listesi Hatası:', error);
+    res.render('admin/sevkiyat-tamamlananlar', {
+      username: req.session.username,
+      sevkiyatlar: []
     });
   }
 });

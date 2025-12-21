@@ -9,29 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/enterprise-style.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f7fafc; color: #1a202c; }
-    .navbar { background: #ffffff; color: #2d3748; padding: 16px 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-bottom: 1px solid #e2e8f0; }
-    .navbar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .navbar-header h1 { font-size: 20px; font-weight: 700; color: #1a202c; }
-    .navbar-right { display: flex; align-items: center; gap: 20px; }
-    .user-info { font-size: 13px; color: #718096; }
-    .logout-btn { background: #ffffff; color: #4a5568; border: 1px solid #e2e8f0; padding: 8px 20px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 200ms ease; font-size: 13px; font-weight: 500; }
-    .logout-btn:hover { background: #f7fafc; border-color: #cbd5e0; transform: translateY(-1px); }
-    .navbar-menu { display: flex; gap: 8px; flex-wrap: wrap; }
-    .navbar-menu a { color: #4a5568; text-decoration: none; padding: 10px 16px; border-radius: 8px; transition: all 200ms ease; font-size: 14px; font-weight: 500; }
-    .navbar-menu a:hover { background: #edf2f7; color: #1a202c; }
-    .navbar-menu a.active { background: #edf2f7; color: #1a202c; font-weight: 600; }
-    .container { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
-    .content-card { background: #ffffff; padding: 40px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-    .content-card h2 { color: #1a202c; font-size: 24px; font-weight: 700; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; }
-    .content-card p { color: #718096; font-size: 15px; line-height: 1.6; }
-    table { width: 100%; border-collapse: collapse; margin-top: 24px; }
-    th { background: #f7fafc; color: #4a5568; padding: 14px 16px; text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-    td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; color: #2d3748; font-size: 14px; }
-    tr:hover { background: #F8FAFC; transition: background 150ms ease; }
-    .btn-kontrol { background: #10B981; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 150ms ease; }
-    .btn-kontrol:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3); }
+    .btn-kontrol { background: linear-gradient(135deg, #10B981, #059669); color: white; border: none; padding: 10px 24px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+    .btn-kontrol:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); }
     .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
     .modal-content { background: #FFFFFF; margin: 5% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
@@ -43,8 +22,16 @@
     .form-group input, .form-group textarea { width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 150ms ease; }
     .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
     .form-group textarea { min-height: 100px; resize: vertical; }
-    .radio-group { display: flex; gap: 24px; margin-top: 12px; }
-    .radio-group label { display: flex; align-items: center; gap: 8px; font-weight: 500; color: #0F172A; cursor: pointer; }
+    .form-group small { color: #64748B; font-size: 13px; display: block; margin-top: 6px; line-height: 1.4; }
+    .input-with-badge { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .input-with-badge input { flex: 1; min-width: 200px; }
+    .expected-badge { background: #E0F2FE; color: #075985; padding: 10px 16px; border-radius: 8px; font-weight: 500; font-size: 13px; white-space: nowrap; border: 1px solid #BAE6FD; }
+    .radio-group { display: flex; gap: 24px; margin-top: 12px; flex-wrap: wrap; }
+    .radio-group label { display: flex; align-items: center; gap: 8px; font-weight: 500; color: #0F172A; cursor: pointer; font-size: 14px; }
+    .radio-group input[type="radio"] { width: 18px; height: 18px; cursor: pointer; }
+    .modal-info-box { background: #E0F2FE; padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #BAE6FD; }
+    .modal-info-box p { margin: 0; color: #075985; font-size: 14px; line-height: 1.6; }
+    .modal-info-box strong { font-weight: 600; }
     .btn-submit { background: #2563EB; color: white; border: none; padding: 14px 32px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%; transition: all 150ms ease; font-family: 'Inter', sans-serif; }
     .btn-submit:hover { background: #1D4ED8; transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3), 0 4px 6px -2px rgba(37, 99, 235, 0.2); }
   </style>
@@ -130,25 +117,35 @@
         <span class="close" onclick="closeModal()">&times;</span>
       </div>
       
-      <div style="background: #e7f3ff; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-        <p style="margin: 0; color: #004085;"><strong>Sipariş:</strong> <span id="modalSiparisInfo"></span></p>
+      <div class="modal-info-box">
+        <p><strong>Sipariş:</strong> <span id="modalSiparisInfo"></span></p>
       </div>
       
       <form action="/personel/cikis-kalite-kaydet" method="POST">
         <input type="hidden" name="siparis_detay_id" id="siparisDetayId">
         
         <div class="form-group">
+          <label>Operatör Seçin:</label>
+          <select name="operator_id" required>
+            <option value="">-- Operatör Seçin --</option>
+            <% operatorler.forEach(operator => { %>
+              <option value="<%= operator.OperatorID %>"><%= operator.OperatorAdi %></option>
+            <% }) %>
+          </select>
+        </div>
+        
+        <div class="form-group">
           <label>Toplam Miktar (Kontrol Edilen):</label>
-          <div style="display: flex; align-items: center; gap: 15px;">
-            <input type="number" name="toplam_miktar" required min="0" style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-            <span id="beklenenMiktarModal" style="background: #e7f3ff; color: #004085; padding: 10px 15px; border-radius: 5px; font-weight: 500; display: none;"></span>
+          <div class="input-with-badge">
+            <input type="number" name="toplam_miktar" required min="0">
+            <span id="beklenenMiktarModal" class="expected-badge" style="display: none;"></span>
           </div>
         </div>
         
         <div class="form-group">
           <label>Uygunsuz Miktar:</label>
-          <input type="number" name="uygunsuz_miktar" min="0" value="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-          <small style="color: #666; display: block; margin-top: 5px;">Kalite kontrolünde reddedilen ürün sayısı</small>
+          <input type="number" name="uygunsuz_miktar" min="0" value="0">
+          <small>Kalite kontrolünde reddedilen ürün sayısı</small>
         </div>
         
         <div class="form-group">

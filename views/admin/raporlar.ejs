@@ -25,6 +25,7 @@
       <a href="/admin/operator-sureleri">Operatör Süreleri</a>
       <a href="/admin/kimyasal-tuketim">Kimyasal Tüketim</a>
       <a href="/admin/bildirimler">Personel Bildirimleri</a>
+      <a href="/admin/sevkiyat-tamamlananlar">Sevkiyatı Tamamlananlar</a>
     </div>
   </nav>
 
@@ -37,11 +38,6 @@
           <h3>Toplam İade</h3>
           <p style="color: #667eea;"><%= iadeOzet.toplam_iade || 0 %></p>
           <small style="color: #718096; font-size: 13px;">Adet Sipariş</small>
-        </div>
-        <div class="stat-card" style="border-left: 4px solid #f093fb;">
-          <h3>Toplam İade Miktarı</h3>
-          <p style="color: #f093fb;"><%= iadeOzet.toplam_iade_miktari || 0 %></p>
-          <small style="color: #718096; font-size: 13px;">Adet Ürün</small>
         </div>
         <div class="stat-card" style="border-left: 4px solid #f59e0b;">
           <h3>Tekrar İşleme Girecek</h3>
@@ -62,7 +58,6 @@
             <tr>
               <th>Sipariş Kodu</th>
               <th>Müşteri</th>
-              <th>İade Miktarı</th>
               <th>Tekrar İşlem</th>
               <th>İade Nedeni</th>
               <th>Tarih</th>
@@ -73,7 +68,6 @@
               <tr>
                 <td><strong><%= iade.SiparisKodu %></strong></td>
                 <td><%= iade.MusteriAdi %></td>
-                <td><%= iade.ToplamIadeMiktari || 0 %></td>
                 <td>
                   <% if (iade.TekrarIslemYapilacakMi == 1) { %>
                     <span class="badge badge-warning">Evet</span>

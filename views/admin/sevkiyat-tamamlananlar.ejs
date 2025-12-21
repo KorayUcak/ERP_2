@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sevkiyatı Tamamlananlar - Simya ERP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/enterprise-style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-header">
+      <h1>Simya ERP - Yönetici Paneli</h1>
+      <div class="navbar-right">
+        <span class="user-info">Hoş geldiniz, <%= username %></span>
+        <a href="/logout" class="logout-btn">Çıkış Yap</a>
+      </div>
+    </div>
+    <div class="navbar-menu">
+      <a href="/admin">Ana Sayfa</a>
+      <a href="/admin/stok-yenile">Stok Yenile</a>
+      <a href="/admin/raporlar">Raporlar</a>
+      <a href="/admin/operator-sureleri">Operatör Süreleri</a>
+      <a href="/admin/kimyasal-tuketim">Kimyasal Tüketim</a>
+      <a href="/admin/bildirimler">Personel Bildirimleri</a>
+      <a href="/admin/sevkiyat-tamamlananlar" class="active">Sevkiyatı Tamamlananlar</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="content-card">
+      <h2>📦 Sevkiyatı Tamamlananlar</h2>
+      
+      <% if (sevkiyatlar.length === 0) { %>
+        <div style="background: #dbeafe; color: #1e40af; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #bfdbfe;">
+          <p>Henüz tamamlanmış sevkiyat bulunmuyor.</p>
+        </div>
+      <% } else { %>
+        <table>
+          <thead>
+            <tr>
+              <th>Sevkiyat ID</th>
+              <th>Sipariş Kodu</th>
+              <th>Müşteri</th>
+              <th>Parça Adı</th>
+              <th>Miktar</th>
+              <th>Termin Tarihi</th>
+              <th>Sevkiyat Tarihi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% sevkiyatlar.forEach(sevkiyat => { %>
+              <tr>
+                <td style="font-weight: 500;">#<%= sevkiyat.SevkiyatID %></td>
+                <td><strong><%= sevkiyat.SiparisKodu %></strong></td>
+                <td><%= sevkiyat.MusteriAdi %></td>
+                <td><%= sevkiyat.ParcaAdi %></td>
+                <td><%= sevkiyat.Miktar %></td>
+                <td><%= new Date(sevkiyat.TerminTarihi).toLocaleDateString('tr-TR') %></td>
+                <td style="color: #10b981; font-weight: 600;">
+                  <%= new Date(sevkiyat.SevkiyatTarihi).toLocaleDateString('tr-TR') %>
+                  <%= new Date(sevkiyat.SevkiyatTarihi).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>
