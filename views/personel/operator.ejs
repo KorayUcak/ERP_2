@@ -150,12 +150,47 @@
           
           <div id="kaliteyeGonderContainer" class="kalite-gonder-box" style="display: none;">
             <h3 style="color: #059669; margin-bottom: 20px; font-size: 24px; font-weight: 700;">✅ Tüm Adımlar Tamamlandı!</h3>
-            <button onclick="islemiBitir()" class="btn-primary" style="padding: 18px 48px; font-size: 18px;">
+            <button onclick="openMiktarModal()" class="btn-primary" style="padding: 18px 48px; font-size: 18px;">
               İŞLEMİ BİTİR VE KALİTEYE GÖNDER
             </button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+  
+  <!-- Miktar Girişi Modal -->
+  <div id="miktarModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);">
+    <div style="background: #FFFFFF; margin: 5% auto; padding: 32px; border-radius: 12px; width: 90%; max-width: 600px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <h3 style="font-size: 24px; color: #0F172A; font-weight: 700;">Miktar Bilgisi</h3>
+        <span onclick="closeMiktarModal()" style="font-size: 28px; font-weight: bold; cursor: pointer; color: #64748B;">&times;</span>
+      </div>
+      
+      <div style="background: #E0F2FE; padding: 16px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #BAE6FD;">
+        <p style="margin: 0; color: #075985; font-size: 14px; line-height: 1.6;">
+          <strong>Sipariş:</strong> <span id="modalSiparisKodu"></span><br>
+          <strong>Beklenen (Giriş Kalite):</strong> <span id="modalBeklenenMiktar"></span> Adet
+        </p>
+      </div>
+      
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #0F172A; font-size: 14px;">Toplam Miktar (İşlenen):</label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <input type="number" id="toplamMiktarInput" min="0" required style="flex: 1; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+          <span id="beklenenMiktarBadge" style="background: #E0F2FE; color: #075985; padding: 10px 16px; border-radius: 8px; font-weight: 500; font-size: 13px; white-space: nowrap; border: 1px solid #BAE6FD; display: none;"></span>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 24px;">
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #0F172A; font-size: 14px;">Kayıp/Eksik Miktar:</label>
+        <input type="number" id="kayipMiktarInput" min="0" value="0" style="width: 100%; padding: 12px 16px; border: 2px solid #E2E8F0; border-radius: 8px; font-size: 14px;">
+        <small style="color: #64748B; font-size: 13px; display: block; margin-top: 6px;">Üretim sırasında kaybedilen veya hatalı çıkan ürün sayısı</small>
+      </div>
+      
+      <button onclick="islemiBitir()" style="background: #2563EB; color: white; border: none; padding: 14px 32px; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600; width: 100%;">
+        KAYDET VE BİTİR
+      </button>
     </div>
   </div>
   
@@ -396,16 +431,52 @@
       return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
     
+    function openMiktarModal() {
+      const siparis = siparisData.find(s => s.SiparisDetayID == siparisId);
+      if (siparis) {
+        const girisKaliteMiktar = siparis.GirisKaliteMiktar || siparis.Miktar || 0;
+        document.getElementById('modalSiparisKodu').textContent = siparis.SiparisKodu + ' - ' + siparis.ParcaAdi;
+        document.getElementById('modalBeklenenMiktar').textContent = girisKaliteMiktar;
+        
+        const beklenenBadge = document.getElementById('beklenenMiktarBadge');
+        if (girisKaliteMiktar > 0) {
+          beklenenBadge.textContent = 'Beklenen: ' + girisKaliteMiktar + ' Adet';
+          beklenenBadge.style.display = 'inline-block';
+        } else {
+          beklenenBadge.style.display = 'none';
+        }
+      }
+      document.getElementById('miktarModal').style.display = 'block';
+    }
+    
+    function closeMiktarModal() {
+      document.getElementById('miktarModal').style.display = 'none';
+      document.getElementById('toplamMiktarInput').value = '';
+      document.getElementById('kayipMiktarInput').value = '0';
+    }
+    
     function islemiBitir() {
       if (!siparisId) {
         alert('Sipariş seçilmemiş!');
         return;
       }
       
+      const toplamMiktar = parseInt(document.getElementById('toplamMiktarInput').value) || 0;
+      const kayipMiktar = parseInt(document.getElementById('kayipMiktarInput').value) || 0;
+      
+      if (toplamMiktar === 0) {
+        alert('Lütfen toplam miktarı girin!');
+        return;
+      }
+      
       fetch('/personel/operator/islem-bitir', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ siparis_id: siparisId })
+        body: JSON.stringify({ 
+          siparis_id: siparisId,
+          toplam_miktar: toplamMiktar,
+          kayip_miktar: kayipMiktar
+        })
       })
       .then(res => res.json())
       .then(data => {

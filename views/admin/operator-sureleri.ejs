@@ -84,8 +84,14 @@
                 <td>
                   <% if (!kayit.BitisZamani) { %>
                     <span class="badge badge-warning">Devam Ediyor</span>
-                  <% } else if (kayit.SureDkMax && kayit.HarcananSureDk > kayit.SureDkMax) { %>
-                    <span class="badge badge-danger">Süre Aşımı</span>
+                  <% } else if (kayit.SureDkMin && kayit.SureDkMax) { %>
+                    <% if (kayit.HarcananSureDk < kayit.SureDkMin) { %>
+                      <span class="badge badge-danger">Süre Aşımı (Çok Hızlı)</span>
+                    <% } else if (kayit.HarcananSureDk > kayit.SureDkMax) { %>
+                      <span class="badge badge-danger">Süre Aşımı (Çok Yavaş)</span>
+                    <% } else { %>
+                      <span class="badge badge-success">Tamamlandı</span>
+                    <% } %>
                   <% } else { %>
                     <span class="badge badge-success">Tamamlandı</span>
                   <% } %>

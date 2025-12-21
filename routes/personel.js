@@ -380,15 +380,19 @@ module.exports = (db) => {
           sd.UrunFotografi, 
           m.MusteriAdi,
           s.SiparisKodu,
-          s.TerminTarihi
+          s.TerminTarihi,
+          MAX(kkg.UygunMiktar) as GirisKaliteMiktar
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
+        LEFT JOIN kalitekontrolgiris kkg ON sd.SiparisDetayID = kkg.SiparisDetayID
         WHERE up.Durum != 'Tamamlandı'
         AND sd.SiparisDetayID IN (SELECT SiparisDetayID FROM islem_adim_kayitlari WHERE AdimKodu = 'GIRIS_KALITE')
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
-        GROUP BY sd.SiparisDetayID
+        GROUP BY sd.SiparisDetayID, sd.SiparisID, sd.ParcaAdi, sd.ParcaTuru, sd.Miktar, 
+                 sd.ParcaNumarasi, sd.CizimRevizyonu, sd.KaplamaStandardiKodu, sd.CizimDosyaYolu, 
+                 sd.UrunFotografi, m.MusteriAdi, s.SiparisKodu, s.TerminTarihi
         ORDER BY sd.SiparisDetayID DESC
       `);
       
@@ -530,7 +534,10 @@ module.exports = (db) => {
 
   router.post('/operator/islem-bitir', authMiddleware, personelMiddleware, async (req, res) => {
     try {
-      const { siparis_id } = req.body;
+      const { siparis_id, toplam_miktar, kayip_miktar } = req.body;
+      
+      const toplamMiktarValue = toplam_miktar ? parseInt(toplam_miktar) : 0;
+      const kayipMiktarValue = kayip_miktar ? parseInt(kayip_miktar) : 0;
       
       const [planlar] = await db.query(
         'SELECT PlanID FROM uretimplanlama WHERE SiparisDetayID = ? ORDER BY Sira ASC',
@@ -553,6 +560,13 @@ module.exports = (db) => {
         ['Tamamlandı', siparis_id]
       );
       
+      // Operatör işlemini islem_adim_kayitlari tablosuna kaydet
+      await db.query(
+        `INSERT INTO islem_adim_kayitlari (SiparisDetayID, AdimKodu, OperatorID, ToplamMiktar, KayipMiktar) 
+         VALUES (?, 'OPERATOR_PROSES', NULL, ?, ?)`,
+        [siparis_id, toplamMiktarValue, kayipMiktarValue]
+      );
+      
       res.json({ success: true, redirect: '/personel?success=1' });
     } catch (error) {
       console.error('İşlem Bitir Hatası:', error);
@@ -564,12 +578,14 @@ module.exports = (db) => {
     try {
       const [pendingQc] = await db.query(`
         SELECT DISTINCT sd.SiparisDetayID, sd.ParcaAdi, sd.ParcaNumarasi, sd.Miktar, s.SiparisKodu, m.MusteriAdi,
-          kkg.UygunMiktar as GirisKaliteMiktar
+          kkg.UygunMiktar as GirisKaliteMiktar,
+          iak.ToplamMiktar as OperatorMiktar
         FROM siparisdetay sd
         JOIN siparisler s ON sd.SiparisID = s.SiparisID
         JOIN musteriler m ON s.MusteriID = m.MusteriID
         JOIN uretimplanlama up ON sd.SiparisDetayID = up.SiparisDetayID
         LEFT JOIN kalitekontrolgiris kkg ON sd.SiparisDetayID = kkg.SiparisDetayID
+        LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID AND iak.AdimKodu = 'OPERATOR_PROSES'
         WHERE up.Durum = 'Tamamlandı'
         AND sd.SiparisDetayID NOT IN (SELECT SiparisDetayID FROM kalitekontrolcikis)
         ORDER BY s.SiparisKodu DESC

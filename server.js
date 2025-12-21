@@ -557,12 +557,15 @@ app.get('/admin/raporlar', authMiddleware, adminMiddleware, async (req, res) => 
         MAX(CASE WHEN iak.AdimKodu = 'MAL_KABUL' THEN iak.KayipMiktar END) as MalKabulKayip,
         MAX(CASE WHEN iak.AdimKodu = 'GIRIS_KALITE' THEN iak.ToplamMiktar END) as GirisKaliteMiktar,
         MAX(CASE WHEN iak.AdimKodu = 'GIRIS_KALITE' THEN iak.KayipMiktar END) as GirisKaliteKayip,
+        MAX(CASE WHEN iak.AdimKodu = 'OPERATOR_PROSES' THEN iak.ToplamMiktar END) as OperatorMiktar,
+        MAX(CASE WHEN iak.AdimKodu = 'OPERATOR_PROSES' THEN iak.KayipMiktar END) as OperatorKayip,
         MAX(CASE WHEN iak.AdimKodu = 'CIKIS_KALITE' THEN iak.ToplamMiktar END) as CikisKaliteMiktar,
         MAX(CASE WHEN iak.AdimKodu = 'CIKIS_KALITE' THEN iak.KayipMiktar END) as CikisKaliteKayip,
         SUM(iak.KayipMiktar) as ToplamKayip
       FROM siparisdetay sd
       JOIN siparisler s ON sd.SiparisID = s.SiparisID
       LEFT JOIN islem_adim_kayitlari iak ON sd.SiparisDetayID = iak.SiparisDetayID
+      WHERE iak.KayitID IS NOT NULL
       GROUP BY sd.SiparisDetayID, s.SiparisKodu, sd.ParcaAdi, sd.Miktar
       ORDER BY s.SiparisKodu DESC
       LIMIT 50

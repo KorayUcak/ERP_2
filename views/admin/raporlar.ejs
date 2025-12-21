@@ -143,6 +143,7 @@
               <th>Başlangıç Miktar</th>
               <th>Mal Kabul</th>
               <th>Giriş Kalite</th>
+              <th>Operatör</th>
               <th>Çıkış Kalite</th>
               <th>Toplam Kayıp</th>
             </tr>
@@ -155,6 +156,7 @@
                 <td><%= siparis.BaslangicMiktar %></td>
                 <td><%= siparis.MalKabulMiktar || '-' %> <% if (siparis.MalKabulKayip > 0) { %><span style="color: #dc2626; font-weight: 600;">(-<%= siparis.MalKabulKayip %>)</span><% } %></td>
                 <td><%= siparis.GirisKaliteMiktar || '-' %> <% if (siparis.GirisKaliteKayip > 0) { %><span style="color: #dc2626; font-weight: 600;">(-<%= siparis.GirisKaliteKayip %>)</span><% } %></td>
+                <td><%= siparis.OperatorMiktar || '-' %> <% if (siparis.OperatorKayip > 0) { %><span style="color: #dc2626; font-weight: 600;">(-<%= siparis.OperatorKayip %>)</span><% } %></td>
                 <td><%= siparis.CikisKaliteMiktar || '-' %> <% if (siparis.CikisKaliteKayip > 0) { %><span style="color: #dc2626; font-weight: 600;">(-<%= siparis.CikisKaliteKayip %>)</span><% } %></td>
                 <td style="color: #dc2626; font-weight: 600;"><%= siparis.ToplamKayip || 0 %></td>
               </tr>
