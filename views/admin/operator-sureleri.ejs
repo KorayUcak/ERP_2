@@ -8,9 +8,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/enterprise-style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     .stat-card { border-left: 4px solid var(--primary-500); }
     .stat-card p { color: var(--primary-500); font-size: 28px; }
+    .chart-container {
+      position: relative;
+      height: 400px;
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -37,16 +43,100 @@
     <!-- Operatör Bazlı Toplam Süre Özeti -->
     <div class="content-card">
       <h2>⏱️ Operatör Bazlı Toplam Çalışma Süreleri</h2>
-      <div class="stats-grid">
-        <% operatorOzet.forEach(op => { %>
-          <div class="stat-card">
-            <h3><%= op.OperatorAdi %></h3>
-            <p><%= op.ToplamSure || 0 %> dk</p>
-            <small><%= op.IslemSayisi || 0 %> işlem tamamlandı</small>
-          </div>
-        <% }) %>
+      <div class="chart-container">
+        <canvas id="operatorChart"></canvas>
       </div>
     </div>
+
+    <script>
+      const operatorData = <%- JSON.stringify(operatorOzet) %>;
+      
+      const ctx = document.getElementById('operatorChart').getContext('2d');
+      const operatorChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: operatorData.map(op => op.OperatorAdi),
+          datasets: [{
+            label: 'Toplam Çalışma Süresi (dk)',
+            data: operatorData.map(op => op.ToplamSure || 0),
+            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+            borderColor: 'rgba(102, 126, 234, 1)',
+            borderWidth: 2,
+            borderRadius: 8,
+            hoverBackgroundColor: 'rgba(102, 126, 234, 1)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                font: {
+                  family: 'Inter',
+                  size: 14,
+                  weight: '600'
+                },
+                padding: 15
+              }
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: 12,
+              titleFont: {
+                family: 'Inter',
+                size: 14,
+                weight: '600'
+              },
+              bodyFont: {
+                family: 'Inter',
+                size: 13
+              },
+              callbacks: {
+                label: function(context) {
+                  const operator = operatorData[context.dataIndex];
+                  return [
+                    'Toplam Süre: ' + (operator.ToplamSure || 0) + ' dk',
+                    'İşlem Sayısı: ' + (operator.IslemSayisi || 0)
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                font: {
+                  family: 'Inter',
+                  size: 12
+                },
+                callback: function(value) {
+                  return value + ' dk';
+                }
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+              }
+            },
+            x: {
+              ticks: {
+                font: {
+                  family: 'Inter',
+                  size: 12,
+                  weight: '500'
+                }
+              },
+              grid: {
+                display: false
+              }
+            }
+          }
+        }
+      });
+    </script>
 
     <!-- Operatör Banyo Adımı Detayları -->
     <div class="content-card">

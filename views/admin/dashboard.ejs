@@ -79,6 +79,39 @@
       </div>
     </div>
     
+    <!-- Sipariş Durumu Sorgulama -->
+    <div class="content-card">
+      <h2>🔍 Sipariş Durumu Sorgulama</h2>
+      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <input 
+          type="text" 
+          id="siparisKoduInput" 
+          placeholder="Sipariş Kodu Giriniz (örn: SIP-2024-001)" 
+          style="flex: 1; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: 'Inter', sans-serif;"
+        />
+        <button 
+          onclick="siparisDurumuSorgula()" 
+          style="padding: 12px 24px; background: var(--primary-500); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; font-family: 'Inter', sans-serif; transition: all 0.2s;"
+          onmouseover="this.style.background='var(--primary-600)'"
+          onmouseout="this.style.background='var(--primary-500)'"
+        >
+          🔍 Sorgula
+        </button>
+      </div>
+      
+      <!-- Sonuç Alanı -->
+      <div id="siparisDetayAlani" style="display: none;">
+        <!-- Sipariş Genel Bilgileri -->
+        <div id="siparisGenelBilgi" style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--primary-500);"></div>
+        
+        <!-- Sipariş Detayları -->
+        <div id="siparisDetaylar"></div>
+      </div>
+      
+      <!-- Hata/Bilgi Mesajı -->
+      <div id="siparisMesaj" style="display: none; padding: 15px; border-radius: 8px; margin-top: 15px;"></div>
+    </div>
+    
     <% if (stokUyari.length > 0) { %>
       <div class="content-card">
         <h2 style="color: var(--error-600);">⚠️ Stok Uyarısı</h2>
@@ -167,6 +200,350 @@
         });
       }
     }
+
+    function siparisDurumuSorgula() {
+      const siparisKodu = document.getElementById('siparisKoduInput').value.trim();
+      const mesajAlani = document.getElementById('siparisMesaj');
+      const detayAlani = document.getElementById('siparisDetayAlani');
+      
+      if (!siparisKodu) {
+        mesajAlani.style.display = 'block';
+        mesajAlani.style.background = '#fee2e2';
+        mesajAlani.style.color = '#991b1b';
+        mesajAlani.style.border = '1px solid #fecaca';
+        mesajAlani.innerHTML = '⚠️ Lütfen sipariş kodu giriniz!';
+        detayAlani.style.display = 'none';
+        return;
+      }
+      
+      mesajAlani.style.display = 'block';
+      mesajAlani.style.background = '#dbeafe';
+      mesajAlani.style.color = '#1e40af';
+      mesajAlani.style.border = '1px solid #bfdbfe';
+      mesajAlani.innerHTML = '🔄 Sorgulanıyor...';
+      detayAlani.style.display = 'none';
+      
+      fetch('/admin/siparis-durumu', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ siparis_kodu: siparisKodu })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Sunucudan gelen yanıt:', data);
+        if (data.success) {
+          try {
+            mesajAlani.style.display = 'none';
+            detayAlani.style.display = 'block';
+            gosterSiparisDetay(data.siparis, data.detaylar);
+          } catch (err) {
+            console.error('Detay gösterme hatası:', err);
+            mesajAlani.style.display = 'block';
+            mesajAlani.style.background = '#fee2e2';
+            mesajAlani.style.color = '#991b1b';
+            mesajAlani.style.border = '1px solid #fecaca';
+            mesajAlani.innerHTML = '❌ Veri işleme hatası: ' + err.message;
+            detayAlani.style.display = 'none';
+          }
+        } else {
+          mesajAlani.style.display = 'block';
+          mesajAlani.style.background = '#fee2e2';
+          mesajAlani.style.color = '#991b1b';
+          mesajAlani.style.border = '1px solid #fecaca';
+          mesajAlani.innerHTML = '❌ ' + (data.error || 'Sipariş bulunamadı!');
+          detayAlani.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Hata:', error);
+        mesajAlani.style.display = 'block';
+        mesajAlani.style.background = '#fee2e2';
+        mesajAlani.style.color = '#991b1b';
+        mesajAlani.style.border = '1px solid #fecaca';
+        mesajAlani.innerHTML = '❌ Sorgu sırasında hata oluştu!';
+        detayAlani.style.display = 'none';
+      });
+    }
+    
+    function gosterSiparisDetay(siparis, detaylar) {
+      const genelBilgiAlani = document.getElementById('siparisGenelBilgi');
+      const detaylarAlani = document.getElementById('siparisDetaylar');
+      
+      // Genel Sipariş Bilgileri
+      const terminTarihi = siparis.TerminTarihi ? new Date(siparis.TerminTarihi).toLocaleDateString('tr-TR') : '-';
+      const olusturmaTarihi = siparis.OlusturmaTarihi ? new Date(siparis.OlusturmaTarihi).toLocaleString('tr-TR') : '-';
+      genelBilgiAlani.innerHTML = `
+        <h3 style="margin: 0 0 15px 0; color: var(--primary-600); font-size: 18px;">📋 Sipariş Genel Bilgileri</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+          <div>
+            <strong style="color: #64748b; font-size: 13px;">Sipariş Kodu:</strong>
+            <p style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #1e293b;">${siparis.SiparisKodu}</p>
+          </div>
+          <div>
+            <strong style="color: #64748b; font-size: 13px;">Müşteri:</strong>
+            <p style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #1e293b;">${siparis.MusteriAdi}</p>
+          </div>
+          <div>
+            <strong style="color: #64748b; font-size: 13px;">Oluşturulma Tarihi:</strong>
+            <p style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #1e293b;">${olusturmaTarihi}</p>
+          </div>
+          <div>
+            <strong style="color: #64748b; font-size: 13px;">Termin Tarihi:</strong>
+            <p style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #1e293b;">${terminTarihi}</p>
+          </div>
+          <div>
+            <strong style="color: #64748b; font-size: 13px;">Telefon:</strong>
+            <p style="margin: 5px 0 0 0; font-size: 15px; color: #1e293b;">${siparis.Telefon || '-'}</p>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <strong style="color: #64748b; font-size: 13px;">Adres:</strong>
+            <p style="margin: 5px 0 0 0; font-size: 14px; color: #1e293b;">${siparis.Adres || '-'}</p>
+          </div>
+        </div>
+      `;
+      
+      // Sipariş Detayları
+      let detayHTML = '<h3 style="margin: 20px 0 15px 0; color: var(--primary-600); font-size: 18px;">📦 Sipariş Detayları ve İşlem Durumu</h3>';
+      
+      detaylar.forEach((detay, index) => {
+        const durumRenk = detay.durum === 'Sevkiyatı Tamamlandı' ? '#10b981' : 
+                          detay.durum === 'Tamamlandı' ? '#3b82f6' : 
+                          detay.durum === 'İade Edildi' ? '#ef4444' : '#f59e0b';
+        
+        // Görsel yollarını hazırla
+        const cizimPath = detay.CizimDosyaYolu ? (detay.CizimDosyaYolu.startsWith('/') ? detay.CizimDosyaYolu : '/uploads/' + detay.CizimDosyaYolu) : null;
+        const urunPath = detay.UrunFotografi ? (detay.UrunFotografi.startsWith('/') ? detay.UrunFotografi : '/uploads/' + detay.UrunFotografi) : null;
+        
+        console.log('Detay ID:', detay.SiparisDetayID, 'Çizim:', cizimPath, 'Ürün:', urunPath);
+        
+        detayHTML += `
+          <div style="background: white; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9;">
+              <div>
+                <h4 style="margin: 0; font-size: 16px; color: #1e293b;">${detay.ParcaAdi}</h4>
+                <p style="margin: 5px 0 0 0; color: #64748b; font-size: 13px;">Detay ID: ${detay.SiparisDetayID}</p>
+              </div>
+              <span style="padding: 8px 16px; background: ${durumRenk}; color: white; border-radius: 20px; font-weight: 600; font-size: 13px;">
+                ${detay.durum}
+              </span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 15px;">
+              <div>
+                <strong style="color: #64748b; font-size: 13px;">Miktar:</strong>
+                <p style="margin: 3px 0 0 0; font-size: 14px; color: #1e293b;">${detay.Miktar}</p>
+              </div>
+              <div>
+                <strong style="color: #64748b; font-size: 13px;">Proses:</strong>
+                <p style="margin: 3px 0 0 0; font-size: 14px; color: #1e293b;">${detay.ProsesAdi || '-'}</p>
+              </div>
+              <div>
+                <strong style="color: #64748b; font-size: 13px;">Uzmanlik Proses ID:</strong>
+                <p style="margin: 3px 0 0 0; font-size: 14px; color: #1e293b;">${detay.UzmanlikProsesID || '-'}</p>
+              </div>
+              <div>
+                <strong style="color: #64748b; font-size: 13px;">Anlaşılan Ücret (TL):</strong>
+                <p style="margin: 3px 0 0 0; font-size: 14px; font-weight: 600; color: #059669;">${detay.FaturaTutari != null && detay.FaturaTutari !== '' ? parseFloat(detay.FaturaTutari).toFixed(2) + ' ₺' : '-'}</p>
+              </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+              <h5 style="margin: 0 0 10px 0; color: #475569; font-size: 14px; font-weight: 600;">🖼️ Görseller ve Dosyalar:</h5>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <div>
+                  <strong style="color: #64748b; font-size: 13px; display: block; margin-bottom: 8px;">Çizim Dosyası:</strong>
+                  ${cizimPath ? (
+                    cizimPath.toLowerCase().endsWith('.pdf') ? `
+                      <a href="${cizimPath}" target="_blank" style="display: flex; align-items: center; justify-content: center; flex-direction: column; border: 2px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; background: #f8fafc; height: 200px; text-decoration: none; transition: all 0.2s;"
+                         onmouseover="this.style.borderColor='var(--primary-500)'; this.style.background='#f1f5f9';"
+                         onmouseout="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+                        <span style="font-size: 50px; margin-bottom: 15px;">📄</span>
+                        <span style="font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 5px;">PDF Dosyası</span>
+                        <span style="font-size: 12px; color: #64748b;">Görüntülemek için tıklayın</span>
+                      </a>
+                    ` : `
+                      <a href="${cizimPath}" target="_blank" style="display: block; border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; transition: all 0.2s; text-decoration: none;">
+                        <img src="${cizimPath}" alt="Çizim Dosyası" style="width: 100%; height: 200px; object-fit: contain; background: #f8fafc; cursor: pointer;" 
+                             onerror="console.error('Görsel yüklenemedi:', '${cizimPath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             onload="console.log('Görsel yüklendi:', '${cizimPath}');"
+                             onmouseover="this.parentElement.style.borderColor='var(--primary-500)'"
+                             onmouseout="this.parentElement.style.borderColor='#e2e8f0'">
+                        <div style="display: none; padding: 20px; text-align: center; background: #f8fafc; color: #64748b; height: 200px; align-items: center; justify-content: center; flex-direction: column;">
+                          <span style="font-size: 40px; margin-bottom: 10px;">❌</span>
+                          <span style="font-size: 13px; font-weight: 600;">Görsel Yüklenemedi</span>
+                          <span style="font-size: 11px; margin-top: 5px; color: #94a3b8;">${cizimPath}</span>
+                          <span style="font-size: 10px; margin-top: 3px; color: #cbd5e1;">Dosya bulunamadı veya erişilemiyor</span>
+                        </div>
+                      </a>
+                    `
+                  ) : `
+                    <div style="border: 2px dashed #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; background: #f8fafc; color: #94a3b8; height: 200px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                      <span style="font-size: 40px; margin-bottom: 10px;">📄</span>
+                      <span style="font-size: 13px;">Çizim Dosyası Yok</span>
+                    </div>
+                  `}
+                </div>
+                <div>
+                  <strong style="color: #64748b; font-size: 13px; display: block; margin-bottom: 8px;">Ürün Fotoğrafı:</strong>
+                  ${urunPath ? `
+                    <a href="${urunPath}" target="_blank" style="display: block; border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; transition: all 0.2s; text-decoration: none;">
+                      <img src="${urunPath}" alt="Ürün Fotoğrafı" style="width: 100%; height: 200px; object-fit: contain; background: #f8fafc; cursor: pointer;" 
+                           onerror="console.error('Görsel yüklenemedi:', '${urunPath}'); this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                           onload="console.log('Görsel yüklendi:', '${urunPath}');"
+                           onmouseover="this.parentElement.style.borderColor='var(--primary-500)'"
+                           onmouseout="this.parentElement.style.borderColor='#e2e8f0'">
+                      <div style="display: none; padding: 20px; text-align: center; background: #f8fafc; color: #64748b; height: 200px; align-items: center; justify-content: center; flex-direction: column;">
+                        <span style="font-size: 40px; margin-bottom: 10px;">❌</span>
+                        <span style="font-size: 13px; font-weight: 600;">Görsel Yüklenemedi</span>
+                        <span style="font-size: 11px; margin-top: 5px; color: #94a3b8;">${urunPath}</span>
+                        <span style="font-size: 10px; margin-top: 3px; color: #cbd5e1;">Dosya bulunamadı veya erişilemiyor</span>
+                      </div>
+                    </a>
+                  ` : `
+                    <div style="border: 2px dashed #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; background: #f8fafc; color: #94a3b8; height: 200px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                      <span style="font-size: 40px; margin-bottom: 10px;">📷</span>
+                      <span style="font-size: 13px;">Ürün Fotoğrafı Yok</span>
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+            
+            ${detay.ProsesAciklama ? `
+              <div style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                <strong style="color: #64748b; font-size: 13px;">Proses Açıklama:</strong>
+                <p style="margin: 5px 0 0 0; font-size: 13px; color: #475569;">${detay.ProsesAciklama}</p>
+              </div>
+            ` : ''}
+            
+            <div style="margin-top: 20px;">
+              <h5 style="margin: 0 0 10px 0; color: #475569; font-size: 14px; font-weight: 600;">🔄 İşlem Adımları:</h5>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                ${getAdimHTML('Mal Kabul', detay.malKabul)}
+                ${getAdimHTML('Giriş Kalite', detay.girisKalite)}
+                ${getAdimHTML('Operatör İşlemi', detay.operatorIslem)}
+                ${getAdimHTML('Çıkış Kalite', detay.cikisKalite)}
+                ${getSevkiyatHTML(detay.sevkiyat)}
+                ${getIadeHTML(detay.iade)}
+              </div>
+            </div>
+            
+            ${detay.hareketler && detay.hareketler.length > 0 ? `
+              <div style="margin-top: 20px;">
+                <h5 style="margin: 0 0 10px 0; color: #475569; font-size: 14px; font-weight: 600;">👷 Operatör Hareketleri:</h5>
+                <div style="max-height: 300px; overflow-y: auto;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <thead>
+                      <tr style="background: #f8fafc;">
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Operatör</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Proses</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Banyo</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Başlangıç</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Bitiş</th>
+                        <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e2e8f0;">Süre (dk)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${detay.hareketler.map(h => `
+                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                          <td style="padding: 8px;">${h.OperatorAdi}</td>
+                          <td style="padding: 8px;">${h.ProsesAdi || '-'}</td>
+                          <td style="padding: 8px;">${h.BanyoAdi || '-'}</td>
+                          <td style="padding: 8px;">${h.BaslangicZamani ? new Date(h.BaslangicZamani).toLocaleString('tr-TR') : '-'}</td>
+                          <td style="padding: 8px;">${h.BitisZamani ? new Date(h.BitisZamani).toLocaleString('tr-TR') : '<span style="color: #f59e0b; font-weight: 600;">Devam Ediyor</span>'}</td>
+                          <td style="padding: 8px; font-weight: 600;">${h.HarcananSureDk || 0}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      detaylarAlani.innerHTML = detayHTML;
+    }
+    
+    function getAdimHTML(adimAdi, adim) {
+      if (!adim) {
+        return `
+          <div style="display: flex; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
+            <span style="width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px;">⏳</span>
+            <span style="color: #64748b; font-size: 13px;">${adimAdi}: <strong>Bekliyor</strong></span>
+          </div>
+        `;
+      }
+      
+      const tarih = adim.KayitTarihi ? new Date(adim.KayitTarihi).toLocaleString('tr-TR') : '-';
+      return `
+        <div style="display: flex; align-items: center; padding: 8px; background: #dcfce7; border-radius: 6px;">
+          <span style="width: 24px; height: 24px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px; color: white;">✓</span>
+          <div style="flex: 1;">
+            <span style="color: #166534; font-size: 13px; font-weight: 600;">${adimAdi}: Tamamlandı</span>
+            <div style="color: #15803d; font-size: 12px; margin-top: 2px;">
+              Miktar: ${adim.ToplamMiktar || 0} ${adim.KayipMiktar > 0 ? `<span style="color: #dc2626; font-weight: 600;">(Kayıp: ${adim.KayipMiktar})</span>` : ''} | Tarih: ${tarih}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    function getSevkiyatHTML(sevkiyat) {
+      if (!sevkiyat) {
+        return `
+          <div style="display: flex; align-items: center; padding: 8px; background: #f8fafc; border-radius: 6px;">
+            <span style="width: 24px; height: 24px; border-radius: 50%; background: #cbd5e1; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px;">⏳</span>
+            <span style="color: #64748b; font-size: 13px;">Sevkiyat: <strong>Bekliyor</strong></span>
+          </div>
+        `;
+      }
+      
+      const tarih = sevkiyat.SevkiyatTarihi ? new Date(sevkiyat.SevkiyatTarihi).toLocaleString('tr-TR') : '-';
+      return `
+        <div style="display: flex; align-items: center; padding: 8px; background: #dcfce7; border-radius: 6px;">
+          <span style="width: 24px; height: 24px; border-radius: 50%; background: #10b981; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px; color: white;">✓</span>
+          <div style="flex: 1;">
+            <span style="color: #166534; font-size: 13px; font-weight: 600;">Sevkiyat: Tamamlandı</span>
+            <div style="color: #15803d; font-size: 12px; margin-top: 2px;">
+              Sevk Edilen: ${sevkiyat.SevkEdilenMiktar || 0} | Tarih: ${tarih}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    function getIadeHTML(iade) {
+      if (!iade) return '';
+      
+      const tarih = iade.IadeTarihi ? new Date(iade.IadeTarihi).toLocaleString('tr-TR') : '-';
+      return `
+        <div style="display: flex; align-items: center; padding: 8px; background: #fee2e2; border-radius: 6px;">
+          <span style="width: 24px; height: 24px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 12px; color: white;">⚠</span>
+          <div style="flex: 1;">
+            <span style="color: #991b1b; font-size: 13px; font-weight: 600;">İade Edildi</span>
+            <div style="color: #b91c1c; font-size: 12px; margin-top: 2px;">
+              Neden: ${iade.IadeNedeni || '-'} | Tarih: ${tarih} ${iade.TekrarIslemYapilacakMi ? '<span style="color: #f59e0b; font-weight: 600;">| Tekrar İşlem Yapılacak</span>' : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Enter tuşu ile arama
+    document.addEventListener('DOMContentLoaded', function() {
+      const input = document.getElementById('siparisKoduInput');
+      if (input) {
+        input.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            siparisDurumuSorgula();
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

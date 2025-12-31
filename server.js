@@ -24,6 +24,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
+app.use('/cizimler', express.static('cizimler'));
 app.use(express.static('public'));
 app.use(session({
   secret: 'simya-erp-secret-key-2024',
@@ -765,6 +766,229 @@ app.post('/admin/bildirimler/sil/:id', authMiddleware, adminMiddleware, async (r
       success: null,
       error: 'Bildirim kaldırılırken hata oluştu!'
     });
+  }
+});
+
+// Sipariş Durumu Sorgulama API
+app.post('/admin/siparis-durumu', authMiddleware, adminMiddleware, async (req, res) => {
+  try {
+    console.log('=== Sipariş Durumu Sorgulama Başladı ===');
+    const { siparis_kodu } = req.body;
+    console.log('Aranan sipariş kodu:', siparis_kodu);
+    
+    if (!siparis_kodu) {
+      return res.json({ success: false, error: 'Sipariş kodu giriniz!' });
+    }
+    
+    // Sipariş bilgilerini al
+    console.log('Sipariş bilgileri sorgulanıyor...');
+    const [[siparis]] = await db.query(`
+      SELECT 
+        s.*,
+        m.MusteriAdi,
+        m.Email,
+        m.Telefon,
+        m.Adres
+      FROM siparisler s
+      JOIN musteriler m ON s.MusteriID = m.MusteriID
+      WHERE s.SiparisKodu = ?
+    `, [siparis_kodu]);
+    
+    if (!siparis) {
+      console.log('Sipariş bulunamadı!');
+      return res.json({ success: false, error: 'Sipariş bulunamadı!' });
+    }
+    
+    console.log('Sipariş bulundu:', siparis.SiparisID, siparis.SiparisKodu);
+    
+    // Sipariş detaylarını al
+    const [siparisDetaylar] = await db.query(`
+      SELECT 
+        sd.*
+      FROM siparisdetay sd
+      WHERE sd.SiparisID = ?
+    `, [siparis.SiparisID]);
+    
+    // Her detay için işlem durumlarını kontrol et
+    for (let detay of siparisDetaylar) {
+      try {
+        // Debug: Görsel yollarını kontrol et
+        console.log('Sipariş Detay ID:', detay.SiparisDetayID);
+        console.log('CizimDosyaYolu:', detay.CizimDosyaYolu);
+        console.log('UrunFotografi:', detay.UrunFotografi);
+        
+        // Proses bilgilerini uretimplanlama üzerinden al
+        let prosesInfo = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT p.ProsesAdi, p.Aciklama as ProsesAciklama
+            FROM uretimplanlama up
+            LEFT JOIN prosesler p ON up.ProsesID = p.ProsesID
+            WHERE up.SiparisDetayID = ?
+            LIMIT 1
+          `, [detay.SiparisDetayID]);
+          prosesInfo = result;
+        } catch (err) {
+          console.error('Proses bilgisi sorgu hatası:', err.message);
+        }
+        
+        detay.ProsesAdi = prosesInfo?.ProsesAdi || null;
+        detay.ProsesAciklama = prosesInfo?.ProsesAciklama || null;
+        
+        // Mal Kabul durumu
+        let malKabul = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT * FROM islem_adim_kayitlari 
+            WHERE SiparisDetayID = ? AND AdimKodu = 'MAL_KABUL'
+            ORDER BY KayitTarihi DESC LIMIT 1
+          `, [detay.SiparisDetayID]);
+          malKabul = result;
+        } catch (err) {
+          console.error('Mal kabul sorgu hatası:', err.message);
+        }
+        
+        // Giriş Kalite durumu
+        let girisKalite = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT * FROM islem_adim_kayitlari 
+            WHERE SiparisDetayID = ? AND AdimKodu = 'GIRIS_KALITE'
+            ORDER BY KayitTarihi DESC LIMIT 1
+          `, [detay.SiparisDetayID]);
+          girisKalite = result;
+        } catch (err) {
+          console.error('Giriş kalite sorgu hatası:', err.message);
+        }
+        
+        // Operatör İşlemi durumu
+        let operatorIslem = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT * FROM islem_adim_kayitlari 
+            WHERE SiparisDetayID = ? AND AdimKodu = 'OPERATOR_PROSES'
+            ORDER BY KayitTarihi DESC LIMIT 1
+          `, [detay.SiparisDetayID]);
+          operatorIslem = result;
+        } catch (err) {
+          console.error('Operatör işlem sorgu hatası:', err.message);
+        }
+        
+        // Çıkış Kalite durumu
+        let cikisKalite = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT * FROM kalitekontrolcikis 
+            WHERE SiparisDetayID = ?
+            ORDER BY KontrolTarihi DESC LIMIT 1
+          `, [detay.SiparisDetayID]);
+          cikisKalite = result;
+        } catch (err) {
+          console.error('Çıkış kalite sorgu hatası:', err.message);
+        }
+        
+        // Sevkiyat durumu
+        let sevkiyat = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT * FROM sevkiyatlar 
+            WHERE SiparisDetayID = ?
+            ORDER BY SevkiyatTarihi DESC LIMIT 1
+          `, [detay.SiparisDetayID]);
+          sevkiyat = result;
+        } catch (err) {
+          console.error('Sevkiyat sorgu hatası:', err.message);
+        }
+        
+        // İade durumu
+        let iade = null;
+        try {
+          const [[result]] = await db.query(`
+            SELECT i.* FROM iadeler i
+            WHERE i.SiparisID = ?
+            ORDER BY i.IadeTarihi DESC LIMIT 1
+          `, [siparis.SiparisID]);
+          iade = result;
+        } catch (err) {
+          console.error('İade sorgu hatası:', err.message);
+        }
+        
+        // Operatör hareketleri
+        let hareketler = [];
+        try {
+          const [result] = await db.query(`
+            SELECT 
+              h.*,
+              o.AdSoyad as OperatorAdi,
+              sba.BanyoAdi,
+              p.ProsesAdi
+            FROM hareketler h
+            JOIN operatorler o ON h.OperatorID = o.OperatorID
+            JOIN uretimplanlama up ON h.PlanID = up.PlanID
+            LEFT JOIN standardbanyoadimlari sba ON h.BanyoAdimID = sba.BanyoAdimID
+            LEFT JOIN prosesler p ON h.ProsesID = p.ProsesID
+            WHERE up.SiparisDetayID = ?
+            ORDER BY h.BaslangicZamani DESC
+          `, [detay.SiparisDetayID]);
+          hareketler = result;
+        } catch (err) {
+          console.error('Hareketler sorgu hatası:', err.message);
+        }
+        
+        // Durumu belirle
+        let durum = 'Beklemede';
+        if (iade) {
+          durum = 'İade Edildi';
+        } else if (sevkiyat) {
+          durum = 'Sevkiyatı Tamamlandı';
+        } else if (cikisKalite) {
+          durum = 'Tamamlandı';
+        } else if (operatorIslem) {
+          durum = 'Operatör İşleminde';
+        } else if (girisKalite) {
+          durum = 'Giriş Kalite Kontrolünde';
+        } else if (malKabul) {
+          durum = 'Mal Kabul Yapıldı';
+        }
+        
+        detay.durum = durum;
+        detay.malKabul = malKabul;
+        detay.girisKalite = girisKalite;
+        detay.operatorIslem = operatorIslem;
+        detay.cikisKalite = cikisKalite;
+        detay.sevkiyat = sevkiyat;
+        detay.iade = iade;
+        detay.hareketler = hareketler;
+        detay.FaturaTutari = siparis.FaturaTutari;
+      } catch (detayError) {
+        console.error('Detay işleme hatası:', detayError.message);
+        // Hata olsa bile detayı ekle, sadece boş değerlerle
+        detay.durum = 'Hata';
+        detay.malKabul = null;
+        detay.girisKalite = null;
+        detay.operatorIslem = null;
+        detay.cikisKalite = null;
+        detay.sevkiyat = null;
+        detay.iade = null;
+        detay.hareketler = [];
+        detay.FaturaTutari = siparis.FaturaTutari;
+      }
+    }
+    
+    console.log('Sipariş sorgusu başarılı, detay sayısı:', siparisDetaylar.length);
+    console.log('Sipariş bilgisi:', siparis.SiparisKodu);
+    
+    res.json({ 
+      success: true, 
+      siparis: siparis,
+      detaylar: siparisDetaylar
+    });
+    
+  } catch (error) {
+    console.error('Sipariş Durumu Sorgulama Hatası:', error);
+    console.error('Error Stack:', error.stack);
+    console.error('Error Message:', error.message);
+    res.json({ success: false, error: 'Sorgu sırasında hata oluştu: ' + error.message });
   }
 });
 
